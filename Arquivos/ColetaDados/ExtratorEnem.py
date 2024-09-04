@@ -295,6 +295,8 @@ LEFT JOIN `dicionario_presenca_redacao`
     
     WHERE 
         ano = {ano}
+        AND id_municipio_escola IN ({cidades})
+        AND sigla_uf_escola IN ({ufs})
     """
 
     
@@ -309,3 +311,5 @@ LEFT JOIN `dicionario_presenca_redacao`
     )
 
     return processamento_enem
+
+

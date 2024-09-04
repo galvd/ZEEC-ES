@@ -24,26 +24,31 @@ def extrair_dados(table_name: str, anos: list,  query_base: str, save_dir: str =
 
     for ano in anos:
         # Substitui placeholders no query_base
-        query = query_base.format(ano=ano)
+        query = query_base.format(ano=ano, cidades=cidades_sql, ufs=uf_sql)
         
-        if cidades != [] and query_base.find("ano = {ano}") != -1:
+        if cidades != [] and query_base.find("ano = {ano}") != -1 and table_name not in ["enem"]:
             query+= f'AND diretorio_id_municipio.nome IN ({cidades_sql}) \n'
         
-        if cidades != [] and query_base.find("ano = {ano}") == -1:
+        if cidades != [] and query_base.find("ano = {ano}") == -1 and table_name not in ["enem"]:
             query+= f'diretorio_id_municipio.nome IN ({cidades_sql}) \n'
         
-        if ufs != []:
+        if ufs != [] and table_name != "enem":
             query += f' AND sigla_uf in ({uf_sql}) \n'
         if mes != None:
             query += f' AND mes = {mes} \n'
         if limit != "":
             query += f' {limit} \n'
 
+        # print(query)
+
         # Executa a consulta
         df = bd.read_sql(query=query, billing_project_id=cloud_id)
+
+        print(df.head())
         
         if len(df) == 0:
-            print(f"Tabela vazia para {ano} do" + " ".join([word.capitalize() for word in table_name.split(sep="_")]))
+            print(f"Tabela vazia para {ano} do " + " ".join([word.capitalize() for word in table_name.split(sep="_")]))
+            continue
         
         else:
             print(f"Dados de {ano} baixados com sucesso!")
@@ -56,8 +61,8 @@ def extrair_dados(table_name: str, anos: list,  query_base: str, save_dir: str =
             os.makedirs(dir_path, exist_ok=True)
             
             # Define o caminho completo do arquivo Parquet e o temporário
-            file_path = os.path.join(save_dir, f'{table_name}_{ano}.parquet')
-            temp_file_path = os.path.join(save_dir, f'{table_name}_{ano}_temp.parquet')
+            file_path = os.path.join(dir_path, f'{table_name}_{ano}.parquet')
+            temp_file_path = os.path.join(dir_path, f'{table_name}_{ano}_temp.parquet')
 
             # Salva o DataFrame no arquivo temporário
             df.to_parquet(temp_file_path, index=False)

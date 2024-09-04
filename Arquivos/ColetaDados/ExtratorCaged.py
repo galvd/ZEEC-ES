@@ -8,8 +8,6 @@ with open('.\\Arquivos\\config.json') as config_file:
 from Arquivos.ColetaDados.Extrator import extrair_dados
 
 
-
-
 cloud_id = config['cloud_id']
 
 

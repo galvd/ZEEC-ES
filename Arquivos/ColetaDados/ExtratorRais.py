@@ -1,21 +1,20 @@
 from __future__ import annotations
 import json
 import sys
-import os
 with open('.\\Arquivos\\config.json') as config_file:
     config = json.load(config_file)
     sys.path.append(config['caminho_rede'])
 
-import basedosdados as bd
+from Arquivos.ColetaDados.Extrator import extrair_dados
 
 
 
 cloud_id = config['cloud_id']
 
-def extrair_rais(anos:list, cidades:list, save_dir: str = None, limit: str = ""):
+def extrair_rais(anos: list, cidades: list, save_dir: str = None, ufs: str = "", limit: str = ""):
 
     # Query gerada pelo site da Base dos Dados: https://basedosdados.org/dataset/3e7c4d58-96ba-448e-b053-d385a829ef00?table=86b69f96-0bfe-45da-833b-6edc9a0af213
-    query_base = """
+    query_rais = """
     WITH 
     dicionario_natureza_estabelecimento AS (
         SELECT
@@ -100,45 +99,21 @@ def extrair_rais(anos:list, cidades:list, save_dir: str = None, limit: str = "")
     LEFT JOIN dicionario_subsetor_ibge
         ON dados.subsetor_ibge = chave_subsetor_ibge
     WHERE 
-        sigla_uf = "ES" 
-        AND diretorio_id_municipio.nome IN ({cidades})
-        AND ano = {ano}
-    {limit}
+        ano = {ano}
     """
 
-    cidades_sql = ", ".join(f"'{cidade}'" for cidade in cidades)
-    df_matriz = []
+    
+    processamento_rais = extrair_dados(
+    table_name= "rais",
+    anos=anos,
+    cidades=cidades,
+    query_base=query_rais,
+    save_dir=save_dir,
+    ufs=ufs,
+    limit=limit
+    )
 
-    for ano in anos:
-        query = query_base.format(ano=ano, cidades=cidades_sql, limit=limit)
-        table_rais = bd.read_sql(query=query, billing_project_id=cloud_id)
-
-        print(f"Dados do RAIS de {ano} processados com sucesso!")
-        df_matriz.append(table_rais)
-
-        if save_dir:
-            os.makedirs(save_dir, exist_ok=True)
-            
-            # Define o caminho completo do arquivo CSV e o temporário
-            file_path = os.path.join(save_dir + "\\Dados\\RAIS", f'rais_{ano}.csv')
-            temp_file_path = os.path.join(save_dir + "\\Dados\\RAIS", f'rais_{ano}_temp.csv')
-            
-            # Salva o DataFrame no arquivo temporário
-            table_rais.to_csv(temp_file_path, index=False)
-            print(f"Arquivo temporário salvo em: {temp_file_path}")
-            
-            # Verifica se o arquivo original já existe e o remove
-            if os.path.exists(file_path):
-                print(f"Arquivo original encontrado. Removendo: {file_path}")
-                os.remove(file_path)
-            
-            # Renomeia o arquivo temporário para o nome final
-            os.rename(temp_file_path, file_path)
-            print(f"Arquivo final salvo em: {file_path}")
-    print("Processamento de dados do RAIS completo!")
-        
-    # Retorna todos os resultados como lista de dataframes
-    return df_matriz
+    return processamento_rais
 
 
 

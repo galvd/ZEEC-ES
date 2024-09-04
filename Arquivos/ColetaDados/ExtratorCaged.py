@@ -1,21 +1,22 @@
 from __future__ import annotations
-import os
 import json
 import sys
 with open('.\\Arquivos\\config.json') as config_file:
     config = json.load(config_file)
     sys.path.append(config['caminho_rede'])
 
-import basedosdados as bd
+from Arquivos.ColetaDados.Extrator import extrair_dados
+
 
 
 
 cloud_id = config['cloud_id']
 
-def extrair_caged(anos:list, cidades:list, save_dir: str = None, limit: str = ""):
 
-    # Query gerada pelo site da Base dos Dados: https://basedosdados.org/dataset/3e7c4d58-96ba-448e-b053-d385a829ef00?table=86b69f96-0bfe-45da-833b-6edc9a0af213
-    query_base = """
+def extrair_caged(anos: list, cidades: list, save_dir: str = None, ufs: str = "", mes: int = None, limit: str = ""):
+
+    # Query gerada pelo site da Base dos Dados: https://basedosdados.org/dataset/562b56a3-0b01-4735-a049-eeac5681f056?table=95106d6f-e36e-4fed-b8e9-99c41cd99ecf
+    query_caged = """
         WITH 
         dicionario_categoria AS (
             SELECT
@@ -188,42 +189,19 @@ def extrair_caged(anos:list, cidades:list, save_dir: str = None, limit: str = ""
             ON dados.indicador_aprendiz = chave_indicador_aprendiz
 
         WHERE 
-                sigla_uf = "ES" 
-                AND diretorio_id_municipio.nome IN ({cidades})
-                AND ano = {ano}
-            {limit}
+                ano = {ano}              
             """
-    
-    cidades_sql = ", ".join(f"'{cidade}'" for cidade in cidades)
-    df_matriz = []
 
-    for ano in anos:
-        query = query_base.format(ano=ano, cidades=cidades_sql, limit=limit)
-        table_caged = bd.read_sql(query=query, billing_project_id=cloud_id)
+    processamento_caged = extrair_dados(
+    table_name= "caged",
+    anos=anos,
+    cidades=cidades,
+    query_base=query_caged,
+    save_dir=save_dir,
+    ufs=ufs,
+    mes = mes,
+    limit=limit
+    )
 
-        print(f"Dados do CAGED de {ano} processados com sucesso!")
-        df_matriz.append(table_caged)
+    return processamento_caged
 
-        if save_dir:
-            os.makedirs(save_dir, exist_ok=True)
-            
-            # Define o caminho completo do arquivo CSV e o temporário
-            file_path = os.path.join(save_dir + "\\Dados\\CAGED", f'caged_{ano}.csv')
-            temp_file_path = os.path.join(save_dir + "\\Dados\\CAGED", f'caged_{ano}_temp.csv')
-            
-            # Salva o DataFrame no arquivo temporário
-            table_caged.to_csv(temp_file_path, index=False)
-            print(f"Arquivo temporário salvo em: {temp_file_path}")
-            
-            # Verifica se o arquivo original já existe e o remove
-            if os.path.exists(file_path):
-                print(f"Arquivo original encontrado. Removendo: {file_path}")
-                os.remove(file_path)
-            
-            # Renomeia o arquivo temporário para o nome final
-            os.rename(temp_file_path, file_path)
-            print(f"Arquivo final salvo em: {file_path}")
-    print("Processamento de dados do CAGED completo!")
-        
-    # Retorna todos os resultados como lista de dataframes
-    return df_matriz

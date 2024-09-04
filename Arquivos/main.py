@@ -8,10 +8,13 @@ from os import getcwd, chdir
 
 from Arquivos.ColetaDados.ExtratorRais import extrair_rais
 from Arquivos.ColetaDados.ExtratorCaged import extrair_caged
+from Arquivos.ColetaDados.ExtratorEnem import extrair_enem
+from Arquivos.ColetaDados.ExtratorCenso import extrair_censo_agua, extrair_censo_esgoto, extrair_censo_pop, extrair_censo_alfabetizados
 
 
-
-anos = [2021, 2022]
+proj_dir = getcwd()
+anos_relatorio = [2021, 2022]
+uf = ["ES"]
 cidades_zeec = ['Marataízes', 'Itapemirim', 'Cachoeiro de Itapemirim', 
             'Presidente Kennedy', 'Piúma', 'Anchieta', 'Guarapari', 
             'Viana', 'Vila Velha', 'Cariacica', 'Vitória', 
@@ -20,6 +23,67 @@ cidades_zeec = ['Marataízes', 'Itapemirim', 'Cachoeiro de Itapemirim',
 
 limit = "LIMIT 10" # argumento opcional para teste
 
+### Extração dos dados
 
-extrair_rais(anos = anos, cidades = cidades_zeec, save_dir = getcwd(), limit = limit)
-extrair_caged(anos = anos, cidades = cidades_zeec,  save_dir = getcwd(), limit = limit)
+## RAIS
+
+extrair_rais(
+    anos = anos_relatorio,
+    cidades = cidades_zeec,
+    save_dir = proj_dir,
+    ufs = uf,
+    limit = limit
+    )
+
+## CAGED
+
+extrair_caged(
+    anos = anos_relatorio,
+    cidades = cidades_zeec,
+    save_dir = proj_dir,
+    ufs = uf,
+    mes = 12,
+    limit = limit
+    )
+
+## ENEM
+extrair_enem(
+    anos = anos_relatorio,
+    cidades = cidades_zeec,
+    save_dir = proj_dir,
+    ufs = uf,
+    limit = limit
+    )
+
+## Censo
+
+extrair_censo_pop(
+    anos = anos_relatorio,
+    cidades = cidades_zeec,
+    save_dir = proj_dir,
+    limit = limit
+    )
+
+extrair_censo_agua(
+    anos = anos_relatorio,
+    cidades = cidades_zeec,
+    save_dir = proj_dir,
+    limit = limit
+    )
+
+extrair_censo_esgoto(
+    anos = anos_relatorio,
+    cidades = cidades_zeec,
+    save_dir = proj_dir,
+    limit = limit
+    )
+
+extrair_censo_alfabetizados(
+    anos = anos_relatorio,
+    cidades = cidades_zeec,
+    save_dir = proj_dir,
+    limit = limit
+    )
+
+
+print("Processamento dos dados completo")

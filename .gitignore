@@ -2,3 +2,7 @@
 Credentials/Credentials.py
 Arquivos/config.json
 *.csv
+*.parquet
+Arquivos/ColetaDados/CNPJ/README.md
+Arquivos/ColetaDados/CNPJ/LICENSE
+Arquivos/ColetaDados/CNPJ/requirements.txt

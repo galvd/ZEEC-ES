@@ -16,7 +16,7 @@ cloud_id = config['cloud_id']
 def extrair_enem(anos: list, cidades: list, save_dir: str = None, ufs: str = "", limit: str = ""):
 
     # Query gerada pelo site da Base dos Dados: https://basedosdados.org/dataset/3e9c8804-c31c-4f48-9a45-d67f1c21a859?table=9a9ad3b2-c21e-4cdb-8523-fda5a44abe29
-    query_rais = """
+    query_enem = """
 WITH 
 dicionario_faixa_etaria AS (
     SELECT
@@ -304,7 +304,7 @@ LEFT JOIN `dicionario_presenca_redacao`
     table_name= "enem",
     anos=anos,
     cidades=cidades,
-    query_base=query_rais,
+    query_base=query_enem,
     save_dir=save_dir,
     ufs=ufs,
     limit=limit

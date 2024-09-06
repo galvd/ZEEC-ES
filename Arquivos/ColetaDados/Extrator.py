@@ -26,13 +26,13 @@ def extrair_dados(table_name: str, anos: list,  query_base: str, save_dir: str =
         # Substitui placeholders no query_base
         query = query_base.format(ano=ano, cidades=cidades_sql, ufs=uf_sql)
         
-        if cidades != [] and query_base.find("ano = {ano}") != -1 and table_name not in ["enem"]:
+        if cidades != [] and query_base.find("ano = {ano}") != -1 and table_name not in ["enem", "educ_base"]:
             query+= f'AND diretorio_id_municipio.nome IN ({cidades_sql}) \n'
         
-        if cidades != [] and query_base.find("ano = {ano}") == -1 and table_name not in ["enem"]:
+        if cidades != [] and query_base.find("ano = {ano}") == -1 and table_name not in ["enem", "educ_base"]:
             query+= f'diretorio_id_municipio.nome IN ({cidades_sql}) \n'
         
-        if ufs != [] and table_name != "enem":
+        if ufs != [] and table_name not in ["enem"]:
             query += f' AND sigla_uf in ({uf_sql}) \n'
         if mes != None:
             query += f' AND mes = {mes} \n'

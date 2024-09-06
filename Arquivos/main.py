@@ -9,6 +9,7 @@ from os import getcwd, chdir
 from Arquivos.ColetaDados.ExtratorRais import extrair_rais
 from Arquivos.ColetaDados.ExtratorCaged import extrair_caged
 from Arquivos.ColetaDados.ExtratorEnem import extrair_enem
+from Arquivos.ColetaDados.ExtratorEdubase import extrair_edu_base
 from Arquivos.ColetaDados.ExtratorPib import extrair_pib_cidades
 from Arquivos.ColetaDados.ExtratorIes import extrair_ies, extrair_cursos_sup
 from Arquivos.ColetaDados.ExtratorConectividade import extrair_internet_acs, extrair_internet_dens
@@ -55,7 +56,7 @@ extrair_rais(
     limit = limit
     )
 
-## CAGED
+# CAGED
 
 extrair_caged(
     anos = anos_relatorio,
@@ -92,7 +93,7 @@ extrair_censo_alfabetizados(
     limit = limit
     )
 
-## PIB Municípios
+# PIB Municípios
 
 extrair_pib_cidades(
     anos = anos_relatorio,
@@ -134,6 +135,16 @@ extrair_cursos_sup(
 extrair_ies(
     anos = anos_relatorio,
     cidades = cidades_zeec.keys(),
+    save_dir = proj_dir,
+    ufs = uf,
+    limit = limit
+    )
+
+# ## Educação Básica
+# # municípios indexados pelo código ibge
+extrair_edu_base(
+    anos = anos_relatorio,
+    cidades = cidades_zeec.values(),
     save_dir = proj_dir,
     ufs = uf,
     limit = limit

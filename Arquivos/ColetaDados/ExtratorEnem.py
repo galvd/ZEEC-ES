@@ -5,13 +5,9 @@ with open('.\\Arquivos\\config.json') as config_file:
     config = json.load(config_file)
     sys.path.append(config['caminho_rede'])
 
-from Arquivos.ColetaDados.Extrator import extrair_dados
+from Arquivos.ColetaDados.Extrator import extrair_dados_sql
 
 
-
-
-
-cloud_id = config['cloud_id']
 
 def extrair_enem(anos: list, cidades: list, save_dir: str = None, ufs: str = "", limit: str = ""):
 
@@ -300,7 +296,7 @@ LEFT JOIN `dicionario_presenca_redacao`
     """
 
     
-    processamento_enem = extrair_dados(
+    processamento_enem = extrair_dados_sql(
     table_name= "enem",
     anos=anos,
     cidades=cidades,

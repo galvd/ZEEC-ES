@@ -5,10 +5,8 @@ with open('.\\Arquivos\\config.json') as config_file:
     config = json.load(config_file)
     sys.path.append(config['caminho_rede'])
 
-from Arquivos.ColetaDados.Extrator import extrair_dados
+from Arquivos.ColetaDados.Extrator import extrair_dados_sql
 
-
-cloud_id = config['cloud_id']
 
 
 def extrair_caged(anos: list, cidades: list, save_dir: str = None, ufs: str = "", mes: int = None, limit: str = ""):
@@ -190,7 +188,7 @@ def extrair_caged(anos: list, cidades: list, save_dir: str = None, ufs: str = ""
                 ano = {ano}              
             """
 
-    processamento_caged = extrair_dados(
+    processamento_caged = extrair_dados_sql(
     table_name= "caged",
     anos=anos,
     cidades=cidades,

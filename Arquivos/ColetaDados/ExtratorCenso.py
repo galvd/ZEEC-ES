@@ -5,11 +5,9 @@ with open('.\\Arquivos\\config.json') as config_file:
     config = json.load(config_file)
     sys.path.append(config['caminho_rede'])
 
-from Arquivos.ColetaDados.Extrator import extrair_dados
+from Arquivos.ColetaDados.Extrator import extrair_dados_sql
 
 
-
-cloud_id = config['cloud_id']
 
 def extrair_censo_agua(cidades: list, save_dir: str = None, limit: str = ""):
 
@@ -28,7 +26,7 @@ def extrair_censo_agua(cidades: list, save_dir: str = None, limit: str = ""):
         WHERE 
             """
     
-    processamento_censo_agua = extrair_dados(
+    processamento_censo_agua = extrair_dados_sql(
     table_name= "censo_agua",
     anos=[2022],
     cidades=cidades,
@@ -57,7 +55,7 @@ def extrair_censo_esgoto(cidades: list, save_dir: str = None, limit: str = ""):
         WHERE 
             """
     
-    processamento_censo_esgoto = extrair_dados(
+    processamento_censo_esgoto = extrair_dados_sql(
     table_name= "censo_esgoto",
     anos=[2022],
     cidades=cidades,
@@ -90,7 +88,7 @@ def extrair_censo_pop(cidades: list, save_dir: str = None, limit: str = ""):
 
             """
     
-    processamento_censo_pop = extrair_dados(
+    processamento_censo_pop = extrair_dados_sql(
     table_name= "censo_pop",
     anos=[2022],
     cidades=cidades,
@@ -121,7 +119,7 @@ def extrair_censo_alfabetizados(cidades: list, save_dir: str = None, limit: str 
 
             """
     
-    processamento_censo_alfabetizados = extrair_dados(
+    processamento_censo_alfabetizados = extrair_dados_sql(
     table_name= "censo_alfabetizados",
     anos=[2022],
     cidades=cidades,

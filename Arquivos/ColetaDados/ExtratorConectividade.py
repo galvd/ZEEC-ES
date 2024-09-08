@@ -5,11 +5,8 @@ with open('.\\Arquivos\\config.json') as config_file:
     config = json.load(config_file)
     sys.path.append(config['caminho_rede'])
 
-from Arquivos.ColetaDados.Extrator import extrair_dados
+from Arquivos.ColetaDados.Extrator import extrair_dados_sql
 
-
-
-cloud_id = config['cloud_id']
 
 
 def extrair_internet_acs(anos: list, cidades: list, save_dir: str = None, ufs: str = "", mes: int = None, limit: str = ""):
@@ -42,7 +39,7 @@ def extrair_internet_acs(anos: list, cidades: list, save_dir: str = None, ufs: s
                 ano = {ano}              
             """
 
-    processamento_internet = extrair_dados(
+    processamento_internet = extrair_dados_sql(
     table_name= "banda_larga",
     anos=anos,
     cidades=cidades,
@@ -78,7 +75,7 @@ def extrair_internet_dens(anos: list, cidades: list, save_dir: str = None, ufs: 
                 ano = {ano}              
             """
 
-    processamento_internet = extrair_dados(
+    processamento_internet = extrair_dados_sql(
     table_name= "densidade_internet",
     anos=anos,
     cidades=cidades,

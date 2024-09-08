@@ -5,6 +5,8 @@ with open('.\\Arquivos\\config.json') as config_file:
     config = json.load(config_file)
     sys.path.append(config['caminho_rede'])
 from os import getcwd, chdir
+from datetime import datetime
+
 
 from Arquivos.ColetaDados.ExtratorRais import extrair_rais
 from Arquivos.ColetaDados.ExtratorCaged import extrair_caged
@@ -14,6 +16,10 @@ from Arquivos.ColetaDados.ExtratorPib import extrair_pib_cidades
 from Arquivos.ColetaDados.ExtratorIes import extrair_ies, extrair_cursos_sup
 from Arquivos.ColetaDados.ExtratorConectividade import extrair_internet_acs, extrair_internet_dens
 from Arquivos.ColetaDados.ExtratorCenso import extrair_censo_agua, extrair_censo_esgoto, extrair_censo_pop, extrair_censo_alfabetizados
+from Arquivos.ColetaDados.ExtratorTransferencias import extrair_transferencias_fex, extrair_transferencias_fpm, extrair_transferencias_fundeb
+
+
+beg = datetime.now()
 
 
 proj_dir = getcwd()
@@ -48,119 +54,143 @@ limit = "LIMIT 10" # argumento opcional para teste
 
 ## RAIS
 
-extrair_rais(
-    anos = anos_relatorio,
-    cidades = cidades_zeec.keys(),
-    save_dir = proj_dir,
-    ufs = uf,
-    limit = limit
-    )
-
-# CAGED
-
-extrair_caged(
-    anos = anos_relatorio,
-    cidades = cidades_zeec.keys(),
-    save_dir = proj_dir,
-    ufs = uf,
-    mes = 12,
-    limit = limit
-    )
-
-## Censo
-
-extrair_censo_pop(
-    cidades = cidades_zeec.keys(),
-    save_dir = proj_dir,
-    limit = limit
-    )
-
-extrair_censo_agua(
-    cidades = cidades_zeec.keys(),
-    save_dir = proj_dir,
-    limit = limit
-    )
-
-extrair_censo_esgoto(
-    cidades = cidades_zeec.keys(),
-    save_dir = proj_dir,
-    limit = limit
-    )
-
-extrair_censo_alfabetizados(
-    cidades = cidades_zeec.keys(),
-    save_dir = proj_dir,
-    limit = limit
-    )
-
-# PIB Municípios
-
-extrair_pib_cidades(
-    anos = anos_relatorio,
-    cidades = cidades_zeec.keys(),
-    save_dir = proj_dir,
-    limit = limit
-    )
-
-## Acesso à Internet Banda Larga
-
-extrair_internet_acs(
-    anos = anos_relatorio,
-    cidades = cidades_zeec.keys(),
-    save_dir = proj_dir,
-    ufs = uf,
-    mes = 12,
-    limit = limit
-    )
+# extrair_rais(
+#     anos = anos_relatorio,
+#     cidades = cidades_zeec.keys(),
+#     save_dir = proj_dir,
+#     ufs = uf,
+#     limit = limit
+#     )
 
 
-extrair_internet_dens(
-    anos = anos_relatorio,
-    cidades = cidades_zeec.keys(),
-    save_dir = proj_dir,
-    ufs = uf,
-    mes = 12,
-    limit = limit
-    )
+# ## CAGED
 
-## Ensino Superior
-extrair_cursos_sup(
-    anos = anos_relatorio,
-    cidades = cidades_zeec.keys(),
-    save_dir = proj_dir,
-    ufs = uf,
-    limit = limit
-    )
+# extrair_caged(
+#     anos = anos_relatorio,
+#     cidades = cidades_zeec.keys(),
+#     save_dir = proj_dir,
+#     ufs = uf,
+#     mes = 12,
+#     limit = limit
+#     )
 
-extrair_ies(
-    anos = anos_relatorio,
-    cidades = cidades_zeec.keys(),
-    save_dir = proj_dir,
-    ufs = uf,
-    limit = limit
-    )
+
+# ## Censo
+
+# extrair_censo_pop(
+#     cidades = cidades_zeec.keys(),
+#     save_dir = proj_dir,
+#     limit = limit
+#     )
+
+# extrair_censo_agua(
+#     cidades = cidades_zeec.keys(),
+#     save_dir = proj_dir,
+#     limit = limit
+#     )
+
+# extrair_censo_esgoto(
+#     cidades = cidades_zeec.keys(),
+#     save_dir = proj_dir,
+#     limit = limit
+#     )
+
+# extrair_censo_alfabetizados(
+#     cidades = cidades_zeec.keys(),
+#     save_dir = proj_dir,
+#     limit = limit
+#     )
+
+
+# # PIB Municípios
+
+# extrair_pib_cidades(
+#     anos = anos_relatorio,
+#     cidades = cidades_zeec.keys(),
+#     save_dir = proj_dir,
+#     limit = limit
+#     )
+
+
+# ## Acesso à Internet Banda Larga
+
+# extrair_internet_acs(
+#     anos = anos_relatorio,
+#     cidades = cidades_zeec.keys(),
+#     save_dir = proj_dir,
+#     ufs = uf,
+#     mes = 12,
+#     limit = limit
+#     )
+
+# extrair_internet_dens(
+#     anos = anos_relatorio,
+#     cidades = cidades_zeec.keys(),
+#     save_dir = proj_dir,
+#     ufs = uf,
+#     mes = 12,
+#     limit = limit
+#     )
+
+
+# ## Ensino Superior
+# extrair_cursos_sup(
+#     anos = anos_relatorio,
+#     cidades = cidades_zeec.keys(),
+#     save_dir = proj_dir,
+#     ufs = uf,
+#     limit = limit
+#     )
+
+# extrair_ies(
+#     anos = anos_relatorio,
+#     cidades = cidades_zeec.keys(),
+#     save_dir = proj_dir,
+#     ufs = uf,
+#     limit = limit
+#     )
+
 
 # ## Educação Básica
-# # municípios indexados pelo código ibge
-extrair_edu_base(
-    anos = anos_relatorio,
-    cidades = cidades_zeec.values(),
-    save_dir = proj_dir,
-    ufs = uf,
-    limit = limit
-    )
+# # # municípios indexados pelo código ibge
+# extrair_edu_base(
+#     anos = anos_relatorio,
+#     cidades = cidades_zeec.values(),
+#     save_dir = proj_dir,
+#     ufs = uf,
+#     limit = limit
+#     )
+
 
 # ## ENEM
 # # municípios indexados pelo código ibge
-extrair_enem(
-    anos = anos_relatorio,
-    cidades = cidades_zeec.values(),
-    save_dir = proj_dir,
-    ufs = uf,
-    limit = limit
-    )
+# extrair_enem(
+#     anos = anos_relatorio,
+#     cidades = cidades_zeec.values(),
+#     save_dir = proj_dir,
+#     ufs = uf,
+#     limit = limit
+#     )
 
+## Transferëncias Municipais
 
+extrair_transferencias_fex(cidades= cidades_zeec.keys(), 
+                           save_dir = proj_dir,
+                           ufs = uf,
+                           anos = anos_relatorio)
 
+extrair_transferencias_fpm(cidades= cidades_zeec.keys(), 
+                           save_dir = proj_dir,
+                           ufs = uf,
+                           anos = anos_relatorio)
+
+extrair_transferencias_fundeb(cidades= cidades_zeec.keys(), 
+                           save_dir = proj_dir,
+                           ufs = uf,
+                           anos = anos_relatorio)
 
 print("Processamento dos dados completo")
+
+end_time = datetime.now()
+time_length = end_time - beg
+print(f'Finished at {end_time}.\nTime elapsed: {time_length}.')

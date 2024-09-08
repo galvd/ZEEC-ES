@@ -5,11 +5,9 @@ with open('.\\Arquivos\\config.json') as config_file:
     config = json.load(config_file)
     sys.path.append(config['caminho_rede'])
 
-from Arquivos.ColetaDados.Extrator import extrair_dados
+from Arquivos.ColetaDados.Extrator import extrair_dados_sql
 
 
-
-cloud_id = config['cloud_id']
 
 def extrair_rais(anos: list, cidades: list, save_dir: str = None, ufs: str = "", limit: str = ""):
 
@@ -103,7 +101,7 @@ def extrair_rais(anos: list, cidades: list, save_dir: str = None, ufs: str = "",
     """
 
     
-    processamento_rais = extrair_dados(
+    processamento_rais = extrair_dados_sql(
     table_name= "rais",
     anos=anos,
     cidades=cidades,

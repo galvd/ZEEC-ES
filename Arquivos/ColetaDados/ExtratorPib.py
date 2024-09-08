@@ -5,12 +5,8 @@ with open('.\\Arquivos\\config.json') as config_file:
     config = json.load(config_file)
     sys.path.append(config['caminho_rede'])
 
-from Arquivos.ColetaDados.Extrator import extrair_dados
+from Arquivos.ColetaDados.Extrator import extrair_dados_sql
 
-
-
-
-cloud_id = config['cloud_id']
 
 
 def extrair_pib_cidades(anos: list, cidades: list, save_dir: str = None, limit: str = ""):
@@ -35,7 +31,7 @@ def extrair_pib_cidades(anos: list, cidades: list, save_dir: str = None, limit: 
                 ano = {ano}              
             """
 
-    processamento_pib = extrair_dados(
+    processamento_pib = extrair_dados_sql(
     table_name= "pib_municipios",
     anos=anos,
     cidades=cidades,

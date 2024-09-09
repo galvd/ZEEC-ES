@@ -8,19 +8,20 @@ e faz o download
 from bs4 import BeautifulSoup
 import requests, wget, os, sys, time, glob
 
-url = 'https://www.gov.br/receitafederal/pt-br/assuntos/orientacao-tributaria/cadastros/consultas/dados-publicos-cnpj'
-url = 'http://200.152.38.155/CNPJ/'
+
+url = 'http://200.152.38.155/CNPJ/dados_abertos_cnpj/2024-08/'
 
 
-pasta_compactados = r"dados-publicos-zip" #local dos arquivos zipados da Receita
+pasta_compactados = os.getcwd()  + r"Dados\\cnpj_receita" #local dos arquivos zipados da Receita
 
 if len(glob.glob(os.path.join(pasta_compactados,'*.zip'))):
     print(f'Há arquivos zip na pasta {pasta_compactados}. Apague ou mova esses arquivos zip e tente novamente')
     sys.exit()
        
-page = requests.get(url)    
+page = requests.get(url)   
 data = page.text
 soup = BeautifulSoup(data)
+
 lista = []
 print('Relação de Arquivos em ' + url)
 for link in soup.find_all('a'):

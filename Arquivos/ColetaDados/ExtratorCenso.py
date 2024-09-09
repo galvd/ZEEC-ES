@@ -9,7 +9,7 @@ from Arquivos.ColetaDados.Extrator import extrair_dados_sql
 
 
 
-def extrair_censo_agua(cidades: list, save_dir: str = None, limit: str = ""):
+def extrair_censo_agua(cidades: list, save_dir: str = None, uf = list, limit: str = ""):
 
     # Query gerada pelo site da Base dos Dados: https://basedosdados.org/dataset/562b56a3-0b01-4735-a049-eeac5681f056?table=95106d6f-e36e-4fed-b8e9-99c41cd99ecf
     query_censo_agua = """
@@ -30,6 +30,7 @@ def extrair_censo_agua(cidades: list, save_dir: str = None, limit: str = ""):
     table_name= "censo_agua",
     anos=[2022],
     cidades=cidades,
+    ufs=uf,
     query_base=query_censo_agua,
     save_dir=save_dir,
     limit=limit
@@ -38,7 +39,7 @@ def extrair_censo_agua(cidades: list, save_dir: str = None, limit: str = ""):
     return processamento_censo_agua
 
 
-def extrair_censo_esgoto(cidades: list, save_dir: str = None, limit: str = ""):
+def extrair_censo_esgoto(cidades: list, save_dir: str = None, ufs = list, limit: str = ""):
 
     # Query gerada pelo site da Base dos Dados: https://basedosdados.org/dataset/08a1546e-251f-4546-9fe0-b1e6ab2b203d?table=77560413-eab2-4c43-abb3-d3694c3ea713
     query_censo_esgoto = """
@@ -59,6 +60,7 @@ def extrair_censo_esgoto(cidades: list, save_dir: str = None, limit: str = ""):
     table_name= "censo_esgoto",
     anos=[2022],
     cidades=cidades,
+    ufs=ufs,
     query_base=query_censo_esgoto,
     save_dir=save_dir,
     limit=limit
@@ -67,7 +69,7 @@ def extrair_censo_esgoto(cidades: list, save_dir: str = None, limit: str = ""):
     return processamento_censo_esgoto
 
 
-def extrair_censo_pop(cidades: list, save_dir: str = None, limit: str = ""):
+def extrair_censo_pop(cidades: list, save_dir: str = None, ufs = list, limit: str = ""):
 
     # Query gerada pelo site da Base dos Dados: https://basedosdados.org/dataset/08a1546e-251f-4546-9fe0-b1e6ab2b203d?table=41ca9691-e1f6-4b74-9089-9a9c24c9041b
     query_censo_pop = """
@@ -92,6 +94,7 @@ def extrair_censo_pop(cidades: list, save_dir: str = None, limit: str = ""):
     table_name= "censo_pop",
     anos=[2022],
     cidades=cidades,
+    ufs=ufs,
     query_base=query_censo_pop,
     save_dir=save_dir,
     limit=limit
@@ -100,7 +103,7 @@ def extrair_censo_pop(cidades: list, save_dir: str = None, limit: str = ""):
     return processamento_censo_pop
 
 
-def extrair_censo_alfabetizados(cidades: list, save_dir: str = None, limit: str = ""):
+def extrair_censo_alfabetizados(cidades: list, save_dir: str = None, ufs = list, limit: str = ""):
 
     # Query gerada pelo site da Base dos Dados: https://basedosdados.org/dataset/08a1546e-251f-4546-9fe0-b1e6ab2b203d?table=d8cd8ccb-7f1e-4831-8cdb-8a797822f754
     query_censo_alfabetizados = """
@@ -123,6 +126,7 @@ def extrair_censo_alfabetizados(cidades: list, save_dir: str = None, limit: str 
     table_name= "censo_alfabetizados",
     anos=[2022],
     cidades=cidades,
+    ufs=ufs,
     query_base=query_censo_alfabetizados,
     save_dir=save_dir,
     limit=limit

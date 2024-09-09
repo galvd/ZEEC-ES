@@ -9,7 +9,7 @@ from Arquivos.ColetaDados.Extrator import extrair_dados_sql
 
 
 
-def extrair_pib_cidades(anos: list, cidades: list, save_dir: str = None, limit: str = ""):
+def extrair_pib_cidades(anos: list, cidades: list, save_dir: str = None, ufs = list, limit: str = ""):
 
     # Query gerada pelo site da Base dos Dados: https://basedosdados.org/dataset/fcf025ca-8b19-4131-8e2d-5ddb12492347?table=fbbbe77e-d234-4113-8af5-98724a956943
     query_pib = """
@@ -35,6 +35,7 @@ def extrair_pib_cidades(anos: list, cidades: list, save_dir: str = None, limit: 
     table_name= "pib_municipios",
     anos=anos,
     cidades=cidades,
+    ufs=ufs,
     query_base=query_pib,
     save_dir=save_dir,
     limit=limit

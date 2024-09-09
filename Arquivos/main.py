@@ -14,6 +14,7 @@ from Arquivos.ColetaDados.ExtratorEnem import extrair_enem
 from Arquivos.ColetaDados.ExtratorEdubase import extrair_edu_base
 from Arquivos.ColetaDados.ExtratorPib import extrair_pib_cidades
 from Arquivos.ColetaDados.ExtratorIes import extrair_ies, extrair_cursos_sup
+from Arquivos.ColetaDados.ExtratorCNPJ import extrair_empresas
 from Arquivos.ColetaDados.ExtratorConectividade import extrair_internet_acs, extrair_internet_dens
 from Arquivos.ColetaDados.ExtratorCenso import extrair_censo_agua, extrair_censo_esgoto, extrair_censo_pop, extrair_censo_alfabetizados
 from Arquivos.ColetaDados.ExtratorTransferencias import extrair_transferencias_fex, extrair_transferencias_fpm, extrair_transferencias_fundeb
@@ -26,25 +27,25 @@ proj_dir = getcwd()
 anos_relatorio = [2021, 2022]
 uf = ["ES"]
 cidades_zeec = {
-    'Marataízes': 3203320,
-    'Itapemirim': 3202900,
-    'Cachoeiro de Itapemirim': 3201209,
-    'Presidente Kennedy': 3204301,
-    'Piúma': 3204202,
-    'Anchieta': 3200409,
-    'Guarapari': 3202405,
-    'Viana': 3205100,
-    'Vila Velha': 3205209,
-    'Cariacica': 3201308,
-    'Vitória': 3205308,
-    'Serra': 3205001,
-    'Fundão': 3202207,
-    'Aracruz': 3200607,
-    'Linhares': 3203205,
-    'Sooretama': 3205019,
-    'Jaguaré': 3203056,
-    'São Mateus': 3204906,
-    'Conceição da Barra': 3201506
+    'Marataízes': '3203320',
+    'Itapemirim': '3202900',
+    'Cachoeiro de Itapemirim': '3201209',
+    'Presidente Kennedy': '3204301',
+    'Piúma': '3204202',
+    'Anchieta': '3200409',
+    'Guarapari': '3202405',
+    'Viana': '3205100',
+    'Vila Velha': '3205209',
+    'Cariacica': '3201308',
+    'Vitória': '3205308',
+    'Serra': '3205001',
+    'Fundão': '3202207',
+    'Aracruz': '3200607',
+    'Linhares': '3203205',
+    'Sooretama': '3205019',
+    'Jaguaré': '3203056',
+    'São Mateus': '3204906',
+    'Conceição da Barra': '3201506'
 }
 
 limit = "LIMIT 10" # argumento opcional para teste
@@ -162,6 +163,16 @@ limit = "LIMIT 10" # argumento opcional para teste
 #     )
 
 
+## CNPJs
+extrair_empresas(
+    anos = anos_relatorio,
+    cidades = cidades_zeec.values(),
+    save_dir = proj_dir,
+    ufs = uf,
+    limit = limit
+    )
+
+
 # ## ENEM
 # # municípios indexados pelo código ibge
 # extrair_enem(
@@ -174,20 +185,17 @@ limit = "LIMIT 10" # argumento opcional para teste
 
 ## Transferëncias Municipais
 
-extrair_transferencias_fex(cidades= cidades_zeec.keys(), 
-                           save_dir = proj_dir,
-                           ufs = uf,
-                           anos = anos_relatorio)
+# extrair_transferencias_fex(cidades= cidades_zeec.keys(), 
+#                            save_dir = proj_dir,
+#                            ufs = uf)
 
-extrair_transferencias_fpm(cidades= cidades_zeec.keys(), 
-                           save_dir = proj_dir,
-                           ufs = uf,
-                           anos = anos_relatorio)
+# extrair_transferencias_fundeb(cidades= cidades_zeec.keys(), 
+#                            save_dir = proj_dir,
+#                            ufs = uf)
 
-extrair_transferencias_fundeb(cidades= cidades_zeec.keys(), 
-                           save_dir = proj_dir,
-                           ufs = uf,
-                           anos = anos_relatorio)
+# extrair_transferencias_fpm(cidades= cidades_zeec.keys(), 
+#                            save_dir = proj_dir,
+#                            ufs = uf)
 
 print("Processamento dos dados completo")
 

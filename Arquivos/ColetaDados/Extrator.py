@@ -14,15 +14,16 @@ cloud_id = config['cloud_id']
 
 
 
-def save_parquet(save_dir: str, table_name: str, df: pd.DataFrame):
+def save_parquet(save_dir: str, table_name: str, df: pd.DataFrame, ano: int = None):
 
     # Garante que o diretório existe
     dir_path = os.path.join(save_dir, "Dados", " ".join([word.capitalize() for word in table_name.split(sep="_")]))
     os.makedirs(dir_path, exist_ok=True)
     
     # Define o caminho completo do arquivo Parquet e o temporário
-    file_path = os.path.join(dir_path, f'{table_name}.parquet')
-    temp_file_path = os.path.join(dir_path, f'{table_name}_temp.parquet')
+    file_suffix = f"_{ano}" if ano else ""
+    file_path = os.path.join(dir_path, f'{table_name}{file_suffix}.parquet')
+    temp_file_path = os.path.join(dir_path, f'{table_name}{file_suffix}_temp.parquet')
 
     # Salva o DataFrame no arquivo temporário
     df.to_parquet(temp_file_path, index=False)
@@ -58,13 +59,13 @@ def extrair_url(url: str, table_name: str, save_dir: str = None, cidades: list =
         df_raw = pd.read_csv(url, delimiter=";")
     except: 
         try:
-            print("Erro ao ler csv como UTF8. Iniciando tentativa com Latin1")
+            print("Erro ao ler csv como UTF-8. Iniciando tentativa com Latin1")
             df_raw = pd.read_csv(url, delimiter=";", encoding="ISO-8859-1")
         except:
             return print("Não foi possível ler o arquivo csv do link fornecido.")
 
     # Filtrando os municipios de interesse
-    df_raw = df_raw[df_raw['Município'].isin(cidades)]
+    df_raw = df_raw[df_raw['Município'].isin(cidades) & df_raw['UF'].isin(ufs)]
 
     # Usar melt para transformar as colunas de ano em uma coluna única chamada 'Ano'
     year_columns = [str(year) for year in anos]  # Colunas de 2014 a 2024
@@ -99,13 +100,14 @@ def extrair_url(url: str, table_name: str, save_dir: str = None, cidades: list =
     df['mes'] = df['mes'].astype(int)
     print(df.head())
 
-    save_parquet(save_dir=save_dir, table_name=table_name, df=df)
+    if anos == []:
+        save_parquet(save_dir=save_dir, table_name=table_name, df=df)
 
     print("Processamento dos dados do " + " ".join([word.capitalize() for word in table_name.split(sep="_")]) + " completo!")
 
 
 
-def extrair_dados_sql(table_name: str, anos: list,  query_base: str, save_dir: str = None, cidades: list = [], ufs: list = [], mes: int = None, limit: str = ""):
+def extrair_dados_sql(table_name: str,  query_base: str, save_dir: str = None, cidades: list = [], ufs: list = [], anos: list = [], mes: int = None, limit: str = ""):
     
     print(f"Iniciando download dos dados do " + " "" ".join([word.capitalize() for word in table_name.split(sep="_")]))
 
@@ -121,11 +123,16 @@ def extrair_dados_sql(table_name: str, anos: list,  query_base: str, save_dir: s
         if cidades != [] and query_base.find("ano = {ano}") != -1 and table_name not in ["enem", "educ_base"]:
             query+= f'AND diretorio_id_municipio.nome IN ({cidades_sql}) \n'
         
-        if cidades != [] and query_base.find("ano = {ano}") == -1 and table_name not in ["enem", "educ_base"]:
+        if cidades != [] and query_base.find("ano = {ano}") == -1 and table_name not in ["enem", "educ_base", "cnpj_empresas"]:
             query+= f'diretorio_id_municipio.nome IN ({cidades_sql}) \n'
         
-        if ufs != [] and table_name not in ["enem"]:
+        if query_base.find("ano = {ano}") == -1 and table_name in ["cnpj_empresas"]:
+            query+= f'AND dados.id_municipio IN ({cidades_sql})\n'
+            
+        
+        if ufs != [] and table_name not in ["enem", "cnpj_empresas"]:
             query += f' AND sigla_uf in ({uf_sql}) \n'
+
         if mes != None:
             query += f' AND mes = {mes} \n'
         if limit != "":
@@ -145,6 +152,11 @@ def extrair_dados_sql(table_name: str, anos: list,  query_base: str, save_dir: s
         else:
             print(f"Dados de {ano} baixados com sucesso!")
 
-        save_parquet(save_dir=save_dir, table_name=table_name, df=df)
+        if ano == None:
+            save_parquet(save_dir=save_dir, table_name=table_name, df=df)
+        else:
+            save_parquet(save_dir=save_dir, table_name=table_name, df=df, ano = ano)
     
     print("Processamento dos dados do " + " ".join([word.capitalize() for word in table_name.split(sep="_")]) + " completo!")
+
+

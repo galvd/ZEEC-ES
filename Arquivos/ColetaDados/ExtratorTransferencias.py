@@ -16,8 +16,7 @@ def extrair_transferencias_fex(cidades: list, save_dir: str = None, ufs: str = "
     table_name= "transferencias_fex",
     cidades=cidades,
     save_dir=save_dir,
-    ufs=ufs,
-    anos = anos
+    ufs=ufs
     )
 
     return processamento_trans_fex
@@ -30,8 +29,7 @@ def extrair_transferencias_fpm(cidades: list, save_dir: str = None, ufs: str = "
     table_name= "transferencias_fpm",
     cidades=cidades,
     save_dir=save_dir,
-    ufs=ufs,
-    anos = anos
+    ufs=ufs
     )
 
     return processamento_trans_fpm
@@ -44,8 +42,7 @@ def extrair_transferencias_fundeb(cidades: list, save_dir: str = None, ufs: str 
     table_name= "transferencias_fundeb",
     cidades=cidades,
     save_dir=save_dir,
-    ufs=ufs,
-    anos = anos
+    ufs=ufs
     )
 
     return processamento_trans_fundeb

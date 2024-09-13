@@ -23,9 +23,10 @@ A soma das bases coletadas para todo o Brasil pode ultrapassar 1TB, entretanto, 
 
 <s>O download no site da Receita é lento, pode demorar várias horas, por isso o código tentará muitas vezes.<br>
 
+
 O download e processamento dos dados da Receita pode demorar até 8h para ser concluído (coletando os últimos 4 meses de dados disponíveis, o resto do histórico de 2021 em diante é obtido via BD).
 
-O código gera arquivos em parquet que serão psoteriormente transferidos para um db em SQLite (ainda não construído).<br>
+O código gera arquivos em parquet que serão psoteriormente transferidos para um db em SQLite (ainda não construído).
 
 
 ## Problemas recorrentes

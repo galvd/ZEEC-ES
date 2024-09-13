@@ -1,12 +1,16 @@
 from __future__ import annotations
-import json
-import sys
+import sys, json
+
 with open('.\\Arquivos\\config.json') as config_file:
     config = json.load(config_file)
     sys.path.append(config['caminho_rede'])
 
 from Arquivos.ColetaDados.Extrator import extrair_dados_sql
+from Arquivos.ColetaDados.Tools import MainParameters
 
+
+cnae_lista = MainParameters().cnae_analise()
+cnae_sql = "|".join(f"{cnae}" for cnae in cnae_lista)
 
 
 def extrair_rais(anos: list, cidades: list, save_dir: str = None, ufs: str = "", limit: str = ""):
@@ -98,7 +102,10 @@ def extrair_rais(anos: list, cidades: list, save_dir: str = None, ufs: str = "",
         ON dados.subsetor_ibge = chave_subsetor_ibge
     WHERE 
         ano = {ano}
+
     """
+    query_rais+= f"""AND (REGEXP_CONTAINS(dados.cnae_1, r'^({cnae_sql})') 
+                        OR REGEXP_CONTAINS(dados.cnae_2, r'^({cnae_sql})'))\n"""
 
     
     processamento_rais = extrair_dados_sql(

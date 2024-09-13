@@ -1,57 +1,21 @@
 from __future__ import annotations
-import json
-import sys
-import os
 import basedosdados as bd
-import gc
 import pandas as pd
+from bs4 import BeautifulSoup
+
+import requests, wget, os, sys, time, glob, re, json, gc
 
 with open('.\\Arquivos\\config.json') as config_file:
     config = json.load(config_file)
     sys.path.append(config['caminho_rede'])
 
+from Arquivos.ColetaDados.Tools import save_parquet, clean_dots
+
 cloud_id = config['cloud_id']
 
 
+def extrair_transf_url(url: str, table_name: str, save_dir: str = None, cidades: list = [], ufs: list = [], anos = []):
 
-def save_parquet(save_dir: str, table_name: str, df: pd.DataFrame, ano: int = None):
-
-    # Garante que o diretório existe
-    dir_path = os.path.join(save_dir, "Dados", " ".join([word.capitalize() for word in table_name.split(sep="_")]))
-    os.makedirs(dir_path, exist_ok=True)
-    
-    # Define o caminho completo do arquivo Parquet e o temporário
-    file_suffix = f"_{ano}" if ano else ""
-    file_path = os.path.join(dir_path, f'{table_name}{file_suffix}.parquet')
-    temp_file_path = os.path.join(dir_path, f'{table_name}{file_suffix}_temp.parquet')
-
-    # Salva o DataFrame no arquivo temporário
-    df.to_parquet(temp_file_path, index=False)
-    print(f"Arquivo temporário salvo em: {temp_file_path}")
-    
-    # Verifica se o arquivo original já existe e o remove
-    if os.path.exists(file_path):
-        print(f"Arquivo original encontrado. Removendo: {file_path}")
-        os.remove(file_path)
-    
-    # Renomeia o arquivo temporário para o nome final
-    os.rename(temp_file_path, file_path)
-    print(f"Arquivo final salvo em: {file_path}")
-
-
-
-def extrair_url(url: str, table_name: str, save_dir: str = None, cidades: list = [], ufs: list = [], anos = []):
-
-    # Função para limpar a formatação de separadores de milhar e decimais
-    def limpar_valor(valor):
-        if isinstance(valor, str):
-            # Remover os pontos como separadores de milhar e substituir os espaços por ponto decimal
-            valor_limpo = valor.replace('.', '').replace(',', '.').strip()
-            try:
-                return float(valor_limpo)
-            except ValueError:
-                return None
-        return valor
 
     # Ler o arquivo CSV diretamente da URL
     print("Iniciando download do csv do ".join([word.capitalize() for word in table_name.split(sep="_")]))
@@ -70,7 +34,7 @@ def extrair_url(url: str, table_name: str, save_dir: str = None, cidades: list =
     # Usar melt para transformar as colunas de ano em uma coluna única chamada 'Ano'
     year_columns = [str(year) for year in anos]  # Colunas de 2014 a 2024
     for col in year_columns:
-        df_raw[col] = df_raw[col].apply(limpar_valor)
+        df_raw[col] = df_raw[col].apply(clean_dots)
 
     fixed_columns = ['COD_MUN', 'Município', 'UF', 'Município - UF', 'Mês']
     
@@ -126,7 +90,7 @@ def extrair_dados_sql(table_name: str,  query_base: str, save_dir: str = None, c
         if cidades != [] and query_base.find("ano = {ano}") == -1 and table_name not in ["enem", "educ_base", "cnpj_empresas"]:
             query+= f'diretorio_id_municipio.nome IN ({cidades_sql}) \n'
         
-        if query_base.find("ano = {ano}") == -1 and table_name in ["cnpj_empresas"]:
+        if cidades != [] and query_base.find("ano = {ano}") == -1 and table_name in ["cnpj_empresas"]:
             query+= f'AND dados.id_municipio IN ({cidades_sql})\n'
             
         
@@ -138,7 +102,7 @@ def extrair_dados_sql(table_name: str,  query_base: str, save_dir: str = None, c
         if limit != "":
             query += f' {limit} \n'
 
-        # print(query)
+        print(query)
 
         # Executa a consulta
         df = bd.read_sql(query=query, billing_project_id=cloud_id)
@@ -156,7 +120,103 @@ def extrair_dados_sql(table_name: str,  query_base: str, save_dir: str = None, c
             save_parquet(save_dir=save_dir, table_name=table_name, df=df)
         else:
             save_parquet(save_dir=save_dir, table_name=table_name, df=df, ano = ano)
+        return df
     
     print("Processamento dos dados do " + " ".join([word.capitalize() for word in table_name.split(sep="_")]) + " completo!")
+    
+
+
+
+def extrair_cnpj_url(url: str, ano: str, mes: str, dir: str = None, count: int = 0):
+    
+    # requisição da página
+    page = requests.get(url)   
+    data = page.text
+    soup = BeautifulSoup(data)
+
+    # Pasta de destino para os arquivos zip
+    pasta_compactados = dir  # Local dos arquivos zipados da Receita
+
+    # Verifica se a pasta existe, se não, cria a pasta
+    if not os.path.exists(pasta_compactados):
+        os.makedirs(pasta_compactados)
+
+    print('Relação de Arquivos em ' + url)
+
+    def get_file_size(url):
+        """Função para obter o tamanho do arquivo via Content-Length no cabeçalho HTTP"""
+        response = requests.head(url)
+        size = response.headers.get('Content-Length')
+        if size:
+            size = int(size)
+            # Converte bytes para MB
+            size_in_mb = size / (1024 * 1024)
+            return size_in_mb
+        return None
+    
+    # Função para verificar se o arquivo já existe
+    def arquivo_existe(arquivo_original, arquivo_novo):
+        arq_original = os.path.exists(os.path.join(pasta_compactados, arquivo_original))
+        arq_novo = os.path.exists(os.path.join(pasta_compactados, arquivo_novo))
+        if arq_original or arq_novo:
+            return True
+        else:
+            return False
+
+    for link in soup.find_all('a'):
+        # Verifica se o link é de um arquivo estabelecimentos\d.zip
+        if re.search(fr'stabelecimentos{count}\.zip$', str(link.get('href'))):
+            cam = link.get('href')
+            full_url = cam if cam.startswith('http') else url + cam
+            
+            nome_arquivo_original = os.path.basename(full_url)  # Nome original do arquivo
+            nome_arquivo_novo = f'Estabelecimentos{count}_{ano}_{mes}.zip'  # Nome novo do arquivo
+
+            # Verifica se o arquivo já existe
+            if arquivo_existe(nome_arquivo_original, nome_arquivo_novo):
+                print(f"O arquivo {nome_arquivo_novo} já existe. Pulando download.")
+                return nome_arquivo_novo # Sai da função, pois o arquivo já existea
+            
+            
+            # Obter o tamanho do arquivo
+            file_size = get_file_size(full_url)
+            
+            if file_size:
+                print(f"{full_url} - {file_size:.2f} MB")
+            else:
+                print(f"{full_url} - Tamanho: Não disponível")
+                
+        
+    def bar_progress(current, total, width=80):
+        if total>=2**20:
+            tbytes='Megabytes'
+            unidade = 2**20
+        else:
+            tbytes='kbytes'
+            unidade = 2**10
+        progress_message = f"Download status: %d%% [%d / %d] {tbytes}" % (current / total * 100, current//unidade, total//unidade)
+        sys.stdout.write("\r" + progress_message)
+        sys.stdout.flush()
+    
+    # Download do arquivo
+    caminho_arquivo_original = os.path.join(pasta_compactados, nome_arquivo_original)
+    print(f'\n{time.asctime()} - Iniciando download do item {count}: {full_url}')
+    wget.download(full_url, out=caminho_arquivo_original, bar=bar_progress)
+
+    # Renomeia o arquivo baixado para o novo nome
+    caminho_arquivo_novo = os.path.join(pasta_compactados, nome_arquivo_novo)
+    try:
+        os.rename(caminho_arquivo_original, caminho_arquivo_novo)
+        print(f"\nArquivo baixado e renomeado para {caminho_arquivo_novo}")
+        return nome_arquivo_novo
+    except OSError as e:
+        print(f"\nErro ao renomear o arquivo {caminho_arquivo_original}: {e}")
+        return None
+
+
+#lista dos arquivos
+r'http://200.152.38.155/CNPJ/dados_abertos_cnpj/AAAA-mm/Estabelecimentos\d.zip'
+
+
 
 

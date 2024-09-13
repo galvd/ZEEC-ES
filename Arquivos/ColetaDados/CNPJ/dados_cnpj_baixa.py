@@ -6,7 +6,7 @@ lista relação de arquivos na página de dados públicos da receita federal
 e faz o download
 """
 from bs4 import BeautifulSoup
-import requests, wget, os, sys, time, glob
+import requests, wget, os, sys, time, glob, re
 
 
 url = 'http://200.152.38.155/CNPJ/dados_abertos_cnpj/2024-08/'
@@ -23,18 +23,41 @@ data = page.text
 soup = BeautifulSoup(data)
 
 lista = []
+tamanho_total = 0  # Variável para armazenar o tamanho total dos arquivos
 print('Relação de Arquivos em ' + url)
+
+def get_file_size(url):
+    """Função para obter o tamanho do arquivo via Content-Length no cabeçalho HTTP"""
+    response = requests.head(url)
+    size = response.headers.get('Content-Length')
+    if size:
+        size = int(size)
+        # Converte bytes para MB
+        size_in_mb = size / (1024 * 1024)
+        return size_in_mb
+    return None
+
 for link in soup.find_all('a'):
-    if str(link.get('href')).endswith('.zip'): 
+    if re.search(r'stabelecimentos\d\.zip$', str(link.get('href'))):
         cam = link.get('href')
-        # if cam.startswith('http://http'):
-        #     cam = 'http://' + cam[len('http://http//'):] 
         if not cam.startswith('http'):
-            print(url+cam)
-            lista.append(url+cam)
+            full_url = url + cam
         else:
-            print(cam)
-            lista.append(cam)
+            full_url = cam
+        
+        # Obter o tamanho do arquivo
+        file_size = get_file_size(full_url)
+        
+        if file_size:
+            print(f"{full_url} - {file_size:.2f} MB")
+            tamanho_total += file_size  # Adiciona o tamanho à soma total
+        else:
+            print(f"{full_url} - Tamanho: Não disponível")
+        
+        lista.append(full_url)
+
+# Exibe o tamanho total esperado dos arquivos
+print(f"\nTamanho total esperado dos arquivos: {tamanho_total:.2f} MB")
             
 resp = input(f'Deseja baixar os arquivos acima para a pasta {pasta_compactados} (y/n)?')
 if resp.lower()!='y' and resp.lower()!='s':
@@ -60,41 +83,14 @@ print('\n\n'+ time.asctime() + f' Finalizou!!! Baixou {len(lista)} arquivos.')
 
 #lista dos arquivos
 '''
-http://200.152.38.155/CNPJ/Cnaes.zip
-http://200.152.38.155/CNPJ/Empresas0.zip
-http://200.152.38.155/CNPJ/Empresas1.zip
-http://200.152.38.155/CNPJ/Empresas2.zip
-http://200.152.38.155/CNPJ/Empresas3.zip
-http://200.152.38.155/CNPJ/Empresas4.zip
-http://200.152.38.155/CNPJ/Empresas5.zip
-http://200.152.38.155/CNPJ/Empresas6.zip
-http://200.152.38.155/CNPJ/Empresas7.zip
-http://200.152.38.155/CNPJ/Empresas8.zip
-http://200.152.38.155/CNPJ/Empresas9.zip
-http://200.152.38.155/CNPJ/Estabelecimentos0.zip
-http://200.152.38.155/CNPJ/Estabelecimentos1.zip
-http://200.152.38.155/CNPJ/Estabelecimentos2.zip
-http://200.152.38.155/CNPJ/Estabelecimentos3.zip
-http://200.152.38.155/CNPJ/Estabelecimentos4.zip
-http://200.152.38.155/CNPJ/Estabelecimentos5.zip
-http://200.152.38.155/CNPJ/Estabelecimentos6.zip
-http://200.152.38.155/CNPJ/Estabelecimentos7.zip
-http://200.152.38.155/CNPJ/Estabelecimentos8.zip
-http://200.152.38.155/CNPJ/Estabelecimentos9.zip
-http://200.152.38.155/CNPJ/Motivos.zip
-http://200.152.38.155/CNPJ/Municipios.zip
-http://200.152.38.155/CNPJ/Naturezas.zip
-http://200.152.38.155/CNPJ/Paises.zip
-http://200.152.38.155/CNPJ/Qualificacoes.zip
-http://200.152.38.155/CNPJ/Simples.zip
-http://200.152.38.155/CNPJ/Socios0.zip
-http://200.152.38.155/CNPJ/Socios1.zip
-http://200.152.38.155/CNPJ/Socios2.zip
-http://200.152.38.155/CNPJ/Socios3.zip
-http://200.152.38.155/CNPJ/Socios4.zip
-http://200.152.38.155/CNPJ/Socios5.zip
-http://200.152.38.155/CNPJ/Socios6.zip
-http://200.152.38.155/CNPJ/Socios7.zip
-http://200.152.38.155/CNPJ/Socios8.zip
-http://200.152.38.155/CNPJ/Socios9.zip
+http://200.152.38.155/CNPJ/dados_abertos_cnpj/AAAA-mm/Estabelecimentos0.zip
+http://200.152.38.155/CNPJ/dados_abertos_cnpj/AAAA-mm/Estabelecimentos1.zip
+http://200.152.38.155/CNPJ/dados_abertos_cnpj/AAAA-mm/Estabelecimentos2.zip
+http://200.152.38.155/CNPJ/dados_abertos_cnpj/AAAA-mm/Estabelecimentos3.zip
+http://200.152.38.155/CNPJ/dados_abertos_cnpj/AAAA-mm/Estabelecimentos4.zip
+http://200.152.38.155/CNPJ/dados_abertos_cnpj/AAAA-mm/Estabelecimentos5.zip
+http://200.152.38.155/CNPJ/dados_abertos_cnpj/AAAA-mm/Estabelecimentos6.zip
+http://200.152.38.155/CNPJ/dados_abertos_cnpj/AAAA-mm/Estabelecimentos7.zip
+http://200.152.38.155/CNPJ/dados_abertos_cnpj/AAAA-mm/Estabelecimentos8.zip
+http://200.152.38.155/CNPJ/dados_abertos_cnpj/AAAA-mm/Estabelecimentos9.zip
 '''

@@ -1,6 +1,6 @@
 from __future__ import annotations
-import json
-import sys
+import sys, json
+
 with open('.\\Arquivos\\config.json') as config_file:
     config = json.load(config_file)
     sys.path.append(config['caminho_rede'])

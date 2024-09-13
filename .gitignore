@@ -6,3 +6,5 @@ Arquivos/config.json
 Arquivos/ColetaDados/CNPJ/README.md
 Arquivos/ColetaDados/CNPJ/LICENSE
 Arquivos/ColetaDados/CNPJ/requirements.txt
+*.tmp
+/Dados

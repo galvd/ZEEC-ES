@@ -130,12 +130,12 @@ class CnpjTreatment:
 
 
     # Função que recebe lê a pasta, procura arquivos zipados e unzipa para a mesma pasta
-    def unzip_cnpj(self, dir: str, zip_name:str):
+    def unzip_cnpj(self, dir: str, zip_name:str, ano: str, mes: str):
 
-        arq_descompactado = os.path.exists(os.path.join(dir, zip_name))
+        arq_descompactado = os.path.exists(os.path.join(dir, f'cnpjs_{ano}_{mes}'))
         if arq_descompactado:
+            print('Pasta com os parquet descompactados já existe')
             return None
-
 
         print('Analisando o arquivo' + zip_name)
         zip_path = os.path.join(dir, zip_name)
@@ -149,7 +149,7 @@ class CnpjTreatment:
 
     # Função que lê a pasta onde os arquivos foram descompactados por unzip_cnpj, coleta apenas as colunas e linhas de interesse e salva a tabela tratada em .parquet
     def shrink_to_parquet(self, dir: str, ano: str, mes: str):
-        print('Entrou no shrink')
+        print('Iniciando conversão e tratamento de csv para parquet')
 
         colunas_estabelecimento = ['cnpj_basico','cnpj_ordem', 'cnpj_dv','matriz_filial', 
                 'nome_fantasia',
@@ -172,13 +172,12 @@ class CnpjTreatment:
                 'situacao_especial',
                 'data_situacao_especial']  
         
-        print('está no caminho correto? ' + dir)
         arq_descompactados = glob(os.path.join(dir, r'*.ESTABELE'))
-        print(arq_descompactados)
 
+        print('Iniciando leitura dos csv para conversão')
         count = 0
         for arq in arq_descompactados:
-            print('Lendo o csv ' + arq)
+            print(f'Lendo o csv n{count}' + arq)
             ddf = dd.read_csv(arq, sep=';', header=None, names=colunas_estabelecimento, encoding='latin1', dtype=str, na_filter=None)
             ddf = ddf[['cnpj_basico','cnpj_ordem', 'cnpj_dv','matriz_filial', 
                 'situacao_cadastral','data_situacao_cadastral', 
@@ -217,6 +216,8 @@ class CnpjTreatment:
         print(df.head())
         
         df.to_parquet(dir + f'\\cnpjs_{ano}_{mes}.parquet')
+
+        
             
 
 

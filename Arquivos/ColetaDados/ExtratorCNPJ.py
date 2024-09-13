@@ -1,5 +1,6 @@
 from __future__ import annotations
 from datetime import datetime
+from glob import glob
 import json, sys, os
 with open('.\\Arquivos\\config.json') as config_file:
     config = json.load(config_file)
@@ -120,11 +121,22 @@ def extrair_empresas_url(url_template: str, save_dir: str, anos: list = []):
     #loop em anos, pegar meses com datetime
     for ano in anos:
         for mes in lista_meses:
-
+            
+            # Path dos arquivos que serão deletados após a conclusão do mês
+            csv_to_del = glob(os.path.join(dir, r'*.ESTABELE'))
+            zip_to_del = glob(os.path.join(dir, fr'*{ano}_{mes}.zip'))
+            temp_to_del = glob(os.path.join(dir, r'*.tmp'))
+            
             # Checando se o parquet objetivo do ano_mes já foi gerado
             parquet_final = os.path.exists(os.path.join(dir, f'cnpjs_{ano}_{mes}.parquet'))
+
             if parquet_final:
                 print(f'O arquivo objetivo cnpjs_{ano}_{mes}.parquet já foi gerado, indo para o próximo mês')
+
+                # deleta zips e csv
+                list(map(os.remove, csv_to_del))
+                list(map(os.remove, zip_to_del))
+                list(map(os.remove, temp_to_del))
                 continue
             
             for file_count in range(0,10):
@@ -135,23 +147,26 @@ def extrair_empresas_url(url_template: str, save_dir: str, anos: list = []):
                 zip_name = extrair_cnpj_url(url=url_formatada, dir=dir, ano=ano, mes=mes, count= file_count)
                 
                 # Descompactar o arquivo
-                treat.unzip_cnpj(dir=dir, zip_name=zip_name)
+                treat.unzip_cnpj(dir=dir, zip_name=zip_name, ano=ano, mes=mes)
 
             # Converter para Parquet
             treat.shrink_to_parquet(dir=dir, ano=ano, mes=mes)
 
+            # deleta zips e csv
+            list(map(os.remove, csv_to_del))
+            list(map(os.remove, zip_to_del))
+            list(map(os.remove, temp_to_del))
 
-# from os import getcwd
-# url = 'http://200.152.38.155/CNPJ/dados_abertos_cnpj/{ano}-{mes}/'
-# proj_dir = getcwd()
-# extrair_empresas_url(url_template= url, save_dir=proj_dir, anos = [2024, 2025])
+
+from os import getcwd
+url = 'http://200.152.38.155/CNPJ/dados_abertos_cnpj/{ano}-{mes}/'
+proj_dir = getcwd()
+extrair_empresas_url(url_template= url, save_dir=proj_dir, anos = [2024, 2025])
 
     
 
-
-
-def extrair_empresas_dict(save_dir: str = None):
-   
+def extrair_munic_dict(save_dir: str = None):
+    # Query que gera o dicionário com nome, código IBGE, código SERPRO (fiscal da RF) dos municípios do Brasil
 
     # Query gerada pelo site da Base dos Dados: https://basedosdados.org/dataset/e43f0d5b-43cf-4bfb-8d90-c38a4e0d7c4f?table=b8432ff5-06c8-45ca-b8b6-33fceb24089d
     query_munic = """

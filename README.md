@@ -1,4 +1,5 @@
 # Zoneamento Ecológico-Econômico da Zona Costeira do Estado do Espírito Santo para 2025 (ZEEC-ES)
+
 Script em python para extrair os arquivos de dados públicos das seguintes bases de dados e relatórios:
 - Caged
 - Rais
@@ -16,13 +17,10 @@ Os dados são obtidos (exceto Transferências e dados recentes de CNPJs - até a
 Python 3.9 ou posterior;<br>
 Bibliotecas pandas, dask, wget, basedosdados.<br><br>
 
-A soma das bases coletadas para todo o Brasil pode ultrapassar 1TB, entretanto, o escopo do relatório se limita aos municípios da costa do ES. (Até o momento, espera-se que os dados some aproximadamente 10GB)
+A soma das bases coletadas para todo o Brasil pode ultrapassar 1TB, entretanto, o escopo do relatório se limita aos municípios da costa do ES. (Até o momento, espera-se que os dados somem aproximadamente 10GB)
 
 
 ## Processamento dos dados
-
-<s>O download no site da Receita é lento, pode demorar várias horas, por isso o código tentará muitas vezes.</s><br>
-
 
 O download e processamento dos dados da Receita pode demorar até 8h para ser concluído (coletando os últimos 4 meses de dados disponíveis, o resto do histórico de 2021 em diante é obtido via BD).
 

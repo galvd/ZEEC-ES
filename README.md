@@ -4,7 +4,7 @@ Script em python para extrair os arquivos de dados públicos das seguintes bases
 - Caged
 - Rais
 - Censo 2022 (Abastecimento de água; Acesso a saneamento; Demografia)
--  Acessos e Densidade de Acessos à internet banda larga
+-  Quantidade e Densidade de Acessos à internet banda larga
 -  INEP (notas Enem; Escolas de Educação Básica; Censo da Educação Superior)
 -  PIB Municipal
 -  Transferências de recursos para municípios (FPM; FEX; FUNDEB)

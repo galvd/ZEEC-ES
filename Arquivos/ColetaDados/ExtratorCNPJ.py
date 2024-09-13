@@ -115,28 +115,35 @@ def extrair_empresas_url(url_template: str, save_dir: str, anos: list = []):
     print('Iniciando download dos arquivos de CNPJs da Receita Federal')
 
     mes_atual = datetime.today().month
-    lista_meses = [f"{mes:02d}" for mes in range(mes_atual-4, mes_atual+1)]
+    lista_meses = [f"{mes:02d}" for mes in range(mes_atual-4, mes_atual)]
+
+    def limpar_residuo():
+        # Path dos arquivos que serão deletados após a conclusão do mês
+        csv_to_del = glob(os.path.join(dir, r'*.ESTABELE'))
+        zip_to_del = glob(os.path.join(dir, fr'*{ano}_{mes}.zip'))
+        tmp_to_del = glob(os.path.join(dir, r'*.tmp'))
+
+        list(map(os.remove, csv_to_del))
+        list(map(os.remove, zip_to_del))
+        list(map(os.remove, tmp_to_del))
 
         
     #loop em anos, pegar meses com datetime
     for ano in anos:
+        if ano > datetime.today().year:
+            return print(f'Ano de {ano} inexistente no repositório. Processo finalizado.')
         for mes in lista_meses:
             
-            # Path dos arquivos que serão deletados após a conclusão do mês
-            csv_to_del = glob(os.path.join(dir, r'*.ESTABELE'))
-            zip_to_del = glob(os.path.join(dir, fr'*{ano}_{mes}.zip'))
-            temp_to_del = glob(os.path.join(dir, r'*.tmp'))
-            
+        
             # Checando se o parquet objetivo do ano_mes já foi gerado
             parquet_final = os.path.exists(os.path.join(dir, f'cnpjs_{ano}_{mes}.parquet'))
 
             if parquet_final:
-                print(f'O arquivo objetivo cnpjs_{ano}_{mes}.parquet já foi gerado, indo para o próximo mês')
+                print(f'O arquivo objetivo cnpjs_{ano}_{mes}.parquet já foi gerado, removendo arquivos e indo para o próximo mês')
 
                 # deleta zips e csv
-                list(map(os.remove, csv_to_del))
-                list(map(os.remove, zip_to_del))
-                list(map(os.remove, temp_to_del))
+                limpar_residuo()
+                
                 continue
             
             for file_count in range(0,10):
@@ -151,11 +158,13 @@ def extrair_empresas_url(url_template: str, save_dir: str, anos: list = []):
 
             # Converter para Parquet
             treat.shrink_to_parquet(dir=dir, ano=ano, mes=mes)
+            
+            print('Excluindo arquivos após exportar para parquet')
 
             # deleta zips e csv
-            list(map(os.remove, csv_to_del))
-            list(map(os.remove, zip_to_del))
-            list(map(os.remove, temp_to_del))
+            limpar_residuo()
+
+    print('Downloads e transformações dos dados de CNPJ finalizados.')
 
 
 from os import getcwd

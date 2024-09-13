@@ -1,9 +1,10 @@
 from __future__ import annotations
 import basedosdados as bd
 import pandas as pd
+import urllib
 from bs4 import BeautifulSoup
 
-import requests, wget, os, sys, time, glob, re, json, gc
+import requests, wget, os, sys, time, re, json, gc
 
 with open('.\\Arquivos\\config.json') as config_file:
     config = json.load(config_file)
@@ -133,6 +134,7 @@ def extrair_cnpj_url(url: str, ano: str, mes: str, dir: str = None, count: int =
     page = requests.get(url)   
     data = page.text
     soup = BeautifulSoup(data)
+    max_retries = 99
 
     # Pasta de destino para os arquivos zip
     pasta_compactados = dir  # Local dos arquivos zipados da Receita
@@ -158,11 +160,13 @@ def extrair_cnpj_url(url: str, ano: str, mes: str, dir: str = None, count: int =
     def arquivo_existe(arquivo_original, arquivo_novo):
         arq_original = os.path.exists(os.path.join(pasta_compactados, arquivo_original))
         arq_novo = os.path.exists(os.path.join(pasta_compactados, arquivo_novo))
-        if arq_original or arq_novo:
-            return True
-        else:
-            return False
-
+        return arq_original or arq_novo
+    
+    print(soup.find_all('a'))
+    if soup.find_all('a') == []:
+        print(f'''Link para {ano}_{mes} pode não estar disponível ainda, confirme no link http://200.152.38.155/CNPJ/dados_abertos_cnpj. Caso esteja correto, todos os downloads foram concluídos.''')
+        return ''
+         
     for link in soup.find_all('a'):
         # Verifica se o link é de um arquivo estabelecimentos\d.zip
         if re.search(fr'stabelecimentos{count}\.zip$', str(link.get('href'))):
@@ -185,8 +189,8 @@ def extrair_cnpj_url(url: str, ano: str, mes: str, dir: str = None, count: int =
                 print(f"{full_url} - {file_size:.2f} MB")
             else:
                 print(f"{full_url} - Tamanho: Não disponível")
+
                 
-        
     def bar_progress(current, total, width=80):
         if total>=2**20:
             tbytes='Megabytes'
@@ -197,21 +201,29 @@ def extrair_cnpj_url(url: str, ano: str, mes: str, dir: str = None, count: int =
         progress_message = f"Download status: %d%% [%d / %d] {tbytes}" % (current / total * 100, current//unidade, total//unidade)
         sys.stdout.write("\r" + progress_message)
         sys.stdout.flush()
-    
-    # Download do arquivo
-    caminho_arquivo_original = os.path.join(pasta_compactados, nome_arquivo_original)
-    print(f'\n{time.asctime()} - Iniciando download do item {count}: {full_url}')
-    wget.download(full_url, out=caminho_arquivo_original, bar=bar_progress)
 
-    # Renomeia o arquivo baixado para o novo nome
-    caminho_arquivo_novo = os.path.join(pasta_compactados, nome_arquivo_novo)
-    try:
-        os.rename(caminho_arquivo_original, caminho_arquivo_novo)
-        print(f"\nArquivo baixado e renomeado para {caminho_arquivo_novo}")
-        return nome_arquivo_novo
-    except OSError as e:
-        print(f"\nErro ao renomear o arquivo {caminho_arquivo_original}: {e}")
-        return None
+        
+    # Tentativa de download com possibilidade de retries
+    caminho_arquivo_original = os.path.join(pasta_compactados, nome_arquivo_original)
+    for attempt in range(max_retries):
+        try:
+            print(f'\n{time.asctime()} - Iniciando download do item {count}: {full_url}')
+            wget.download(full_url, out=caminho_arquivo_original, bar=bar_progress)
+
+            # Renomeia o arquivo baixado para o novo nome
+            caminho_arquivo_novo = os.path.join(pasta_compactados, nome_arquivo_novo)
+            os.rename(caminho_arquivo_original, caminho_arquivo_novo)
+            print(f"\nArquivo baixado e renomeado para {caminho_arquivo_novo}")
+            return nome_arquivo_novo
+
+        except urllib.error.ContentTooShortError as e:
+            print(f"\nErro ao baixar o arquivo (tentativa {attempt + 1}/{max_retries}): {e}")
+            print("Tentando novamente...")
+            time.sleep(5)  # Pequena pausa antes de tentar novamente
+
+        except OSError as e:
+            print(f"\nErro ao renomear o arquivo {caminho_arquivo_original}: {e}")
+            return None
 
 
 #lista dos arquivos

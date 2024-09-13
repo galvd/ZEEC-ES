@@ -131,21 +131,23 @@ class CnpjTreatment:
 
     # Função que recebe lê a pasta, procura arquivos zipados e unzipa para a mesma pasta
     def unzip_cnpj(self, dir: str, zip_name:str, ano: str, mes: str):
+        if zip_name != '':
+            arq_descompactado = os.path.exists(os.path.join(dir, f'cnpjs_{ano}_{mes}'))
+            if arq_descompactado:
+                print('Pasta com os parquet descompactados já existe')
+                return None
 
-        arq_descompactado = os.path.exists(os.path.join(dir, f'cnpjs_{ano}_{mes}'))
-        if arq_descompactado:
-            print('Pasta com os parquet descompactados já existe')
-            return None
-
-        print('Analisando o arquivo' + zip_name)
-        zip_path = os.path.join(dir, zip_name)
-        print('Analisando o csv em:\n' + zip_path)
-   
-        print(time.asctime(), 'descompactando ' + zip_path)
-        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-            arquivos_no_zip = zip_ref.namelist()
-            print('Arquivo(s) csv encontrados no zip: ' + str(arquivos_no_zip))
-            zip_ref.extractall(dir)
+            print('Analisando o arquivo' + zip_name)
+            zip_path = os.path.join(dir, zip_name)
+            print('Analisando o csv em:\n' + zip_path)
+    
+            print(time.asctime(), 'descompactando ' + zip_path)
+            with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                arquivos_no_zip = zip_ref.namelist()
+                print('Arquivo(s) csv encontrados no zip: ' + str(arquivos_no_zip))
+                zip_ref.extractall(dir)
+        if zip_name == '':
+            print('Não foi possível obter o nome dos arquivos zip. Verifique se o arquivo foi baixado corretamente.')
 
     # Função que lê a pasta onde os arquivos foram descompactados por unzip_cnpj, coleta apenas as colunas e linhas de interesse e salva a tabela tratada em .parquet
     def shrink_to_parquet(self, dir: str, ano: str, mes: str):
@@ -212,12 +214,15 @@ class CnpjTreatment:
             ddf.to_parquet(path = dir + f'\\cnpj_url\\cnpjs_{ano}_{mes}', name_function=parquet_name)
             count += 1
 
-        df = pd.read_parquet(path = dir + f'\\cnpj_url\\cnpjs_{ano}_{mes}')
-        print(df.head())
-        
-        df.to_parquet(dir + f'\\cnpjs_{ano}_{mes}.parquet')
+        try:
+            df = pd.read_parquet(path = dir + f'\\cnpj_url\\cnpjs_{ano}_{mes}')
+            print(df.head())
+            
+            df.to_parquet(dir + f'\\cnpjs_{ano}_{mes}.parquet')
 
-        
+        except FileNotFoundError as e:
+            print(f'Processo Finalizado. Arquivos parquet para {ano}-{mes} não encontrado: {e}')
+
             
 
 

@@ -1,4 +1,4 @@
-# Zoneamento Ecológico-Econômico da Zona Costeira do Estado do Espírito Santo para 2025 (ZEEC-ES)
+# Zoneamento Ecológico-Econômico Costeiro do Estado do Espírito Santo para 2025 (ZEEC-ES)
 
 Script em python para extrair os arquivos de dados públicos das seguintes bases de dados e relatórios:
 - Caged

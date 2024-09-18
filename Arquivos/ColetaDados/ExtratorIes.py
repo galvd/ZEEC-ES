@@ -1,3 +1,47 @@
+"""
+ExtratorIes.py
+Este arquivo contém funções para extrair dados sobre Instituições de Ensino Superior (IES) e Cursos Superiores a partir de uma base de dados SQL, utilizando a biblioteca basedosdados.
+
+Dependências
+Bibliotecas Externas:
+sys: Manipulação do caminho de importação.
+json: Leitura e processamento de arquivos JSON.
+Arquivos Importados:
+Extrator de Arquivos.ColetaDados.Extrator: Função extrair_dados_sql para execução de consultas SQL e manipulação de resultados.
+Configuração Inicial
+O arquivo carrega a configuração a partir de um arquivo JSON (config.json) localizado em .\Arquivos\config.json, que especifica o caminho de rede para importação de módulos. Adiciona este caminho ao sys.path para possibilitar a importação de módulos adicionais.
+
+Funções
+extrair_ies(anos: list, cidades: list, main_dir: str = None, ufs: str = "", limit: str = "")
+Extrai dados sobre instituições de ensino superior (IES) a partir de uma base de dados SQL.
+
+Parâmetros:
+
+anos (list): Lista de anos para filtrar os dados.
+cidades (list): Lista de cidades para filtrar os dados.
+main_dir (str, opcional): Diretório principal para salvar os dados extraídos.
+ufs (str, opcional): Unidade da Federação para filtrar os dados.
+limit (str, opcional): Limite adicional para a consulta SQL.
+Query SQL: A consulta SQL extrai diversos atributos das instituições de ensino superior, como tipo de organização acadêmica, nome da mantenedora, quantidade de docentes, etc. A query inclui junções com diretórios de municípios, instituições e CEPs para enriquecer os dados.
+
+Retorno: Chama a função extrair_dados_sql com os parâmetros fornecidos e retorna o resultado do processamento.
+
+extrair_cursos_sup(anos: list, cidades: list, main_dir: str = None, ufs: str = "", limit: str = "")
+Extrai dados sobre cursos superiores a partir de uma base de dados SQL.
+
+Parâmetros:
+
+anos (list): Lista de anos para filtrar os dados.
+cidades (list): Lista de cidades para filtrar os dados.
+main_dir (str, opcional): Diretório principal para salvar os dados extraídos.
+ufs (str, opcional): Unidade da Federação para filtrar os dados.
+limit (str, opcional): Limite adicional para a consulta SQL.
+Query SQL: A consulta SQL extrai diversos atributos dos cursos superiores, como tipo de dimensão, tipo de organização acadêmica, quantidade de vagas, ingressantes, matrículas e concluintes. Inclui junções com dicionários de tipo e diretórios de cursos.
+
+Retorno: Chama a função extrair_dados_sql com os parâmetros fornecidos e retorna o resultado do processamento.
+"""
+
+
 from __future__ import annotations
 import sys, json
 
@@ -9,7 +53,7 @@ from Arquivos.ColetaDados.Extrator import extrair_dados_sql
 
 
 
-def extrair_ies(anos: list, cidades: list, save_dir: str = None, ufs: str = "", limit: str = ""):
+def extrair_ies(anos: list, cidades: list, main_dir: str = None, ufs: str = "", limit: str = ""):
 
     # Query gerada pelo site da Base dos Dados: https://basedosdados.org/dataset/a3b57cca-ff80-4bf2-8bac-c145109e06a7?table=e8ee3373-0f3d-4617-849c-c730970a819e
     query_ies = """
@@ -108,7 +152,7 @@ def extrair_ies(anos: list, cidades: list, save_dir: str = None, ufs: str = "", 
     anos=anos,
     cidades=cidades,
     query_base=query_ies,
-    save_dir=save_dir,
+    main_dir=main_dir,
     ufs=ufs,
     limit=limit
     )
@@ -116,7 +160,7 @@ def extrair_ies(anos: list, cidades: list, save_dir: str = None, ufs: str = "", 
     return processamento_ies
 
 
-def extrair_cursos_sup(anos: list, cidades: list, save_dir: str = None, ufs: str = "", limit: str = ""):
+def extrair_cursos_sup(anos: list, cidades: list, main_dir: str = None, ufs: str = "", limit: str = ""):
 
     # Query gerada pelo site da Base dos Dados: https://basedosdados.org/dataset/a3b57cca-ff80-4bf2-8bac-c145109e06a7?table=03f7e043-9ea1-47f9-9e77-f55dfe449381
     query_cursos = """
@@ -386,7 +430,7 @@ def extrair_cursos_sup(anos: list, cidades: list, save_dir: str = None, ufs: str
     anos=anos,
     cidades=cidades,
     query_base=query_cursos,
-    save_dir=save_dir,
+    main_dir=main_dir,
     ufs=ufs,
     limit=limit
     )

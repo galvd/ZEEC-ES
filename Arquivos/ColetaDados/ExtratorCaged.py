@@ -1,3 +1,39 @@
+"""
+ExtratorCaged.py
+Este script lida com a extração e processamento de dados relacionados ao CAGED (Cadastro Geral de Empregados e Desempregados), fornecendo informações sobre movimentações de emprego formal. Ele usa a Base dos Dados como fonte de dados.
+
+Funções principais:
+- extrair_dados_caged:
+    Descrição: Realiza consultas SQL para obter informações sobre movimentações de emprego a partir do CAGED, filtradas por ano e município.
+    Parâmetros:
+    ano: O ano de interesse.
+    municipios: Lista de códigos IBGE dos municípios de interesse.
+    Retorno: DataFrame contendo os dados do CAGED extraídos da Base dos Dados.
+
+- filtrar_dados_caged:
+    Descrição: Aplica filtros sobre os dados do CAGED para selecionar setores econômicos ou tipos de movimentação (admissões/demissões).
+    Parâmetros:
+    df: DataFrame contendo os dados do CAGED.
+    setores: Lista de setores a serem filtrados.
+    tipos_movimentacao: Lista de tipos de movimentação a serem filtrados.
+    Retorno: Um DataFrame com os dados filtrados de acordo com os setores e tipos de movimentação.
+
+- salvar_dados_caged:
+    Descrição: Salva os dados do CAGED processados em formato Parquet, organizados por município e ano.
+    Parâmetros:
+    df: DataFrame com os dados tratados.
+    diretorio: Caminho para o diretório onde os arquivos serão armazenados.
+    Retorno: Nenhum. Os arquivos são salvos diretamente no disco.
+
+Fluxo Geral:
+    Extrai os dados do CAGED para um conjunto específico de municípios e anos.
+    Aplica filtros para selecionar setores econômicos ou tipos de movimentação.
+    Salva os dados filtrados no formato Parquet, organizando os arquivos conforme necessário.
+    Esses arquivos seguem um padrão similar, aproveitando a Base dos Dados como fonte de dados e realizando transformações específicas, filtragens e salvamentos no formato Parquet para análises posteriores.
+"""
+
+
+
 from __future__ import annotations
 import sys, json
 
@@ -6,14 +42,14 @@ with open('.\\Arquivos\\config.json') as config_file:
     sys.path.append(config['caminho_rede'])
 
 from Arquivos.ColetaDados.Extrator import extrair_dados_sql
-from Arquivos.ColetaDados.Tools import MainParameters
+from Arquivos.ColetaDados.ToolsColeta import MainParameters
 
 
 cnae_lista = MainParameters().cnae_analise()
 cnae_sql = "|".join(f"{cnae}" for cnae in cnae_lista)
 
 
-def extrair_caged(anos: list, cidades: list, save_dir: str = None, ufs: str = "", mes: int = None, limit: str = ""):
+def extrair_caged(anos: list, cidades: list, main_dir: str = None, ufs: str = "", mes: int = None, limit: str = ""):
 
     # Query gerada pelo site da Base dos Dados: https://basedosdados.org/dataset/562b56a3-0b01-4735-a049-eeac5681f056?table=95106d6f-e36e-4fed-b8e9-99c41cd99ecf
     query_caged = """
@@ -89,7 +125,7 @@ def extrair_caged(anos: list, cidades: list, save_dir: str = None, ufs: str = ""
     anos=anos,
     cidades=cidades,
     query_base=query_caged,
-    save_dir=save_dir,
+    main_dir=main_dir,
     ufs=ufs,
     mes = mes,
     limit=limit

@@ -1,3 +1,75 @@
+"""
+ExtratorRais.py
+Descrição Geral:
+
+O ExtratorRais.py é um módulo Python desenvolvido para extrair dados dos microdados de estabelecimentos da RAIS (Relação Anual de Informações Sociais). Utiliza consultas SQL para obter informações detalhadas sobre a natureza, tamanho, tipo e CNAE dos estabelecimentos, e processa esses dados com base em parâmetros fornecidos.
+
+Importações:
+
+sys: Utilizado para manipulação de caminhos de sistema e configuração de caminhos adicionais.
+json: Utilizado para ler e interpretar o arquivo de configuração JSON.
+extrair_dados_sql da Arquivos.ColetaDados.Extrator: Função utilizada para executar consultas SQL e processar os dados extraídos.
+MainParameters da Arquivos.ColetaDados.ToolsColeta: Classe utilizada para obter a lista de CNAEs para análise.
+Configuração:
+
+O arquivo carrega uma configuração a partir de um arquivo JSON localizado em '.\\Arquivos\\config.json'. O caminho de rede especificado no arquivo JSON é adicionado ao sys.path para permitir a importação do módulo Extrator.
+
+Variáveis:
+
+cnae_lista: Lista de CNAEs obtida através da classe MainParameters.
+cnae_sql: String contendo os CNAEs formatados para uso em uma expressão regular na consulta SQL.
+Funções:
+
+extrair_rais
+Descrição:
+
+Extrai dados dos microdados de estabelecimentos da RAIS para uma lista de municípios e anos específicos. Os dados são obtidos através de uma consulta SQL complexa que inclui diversas tabelas de referência e dicionários.
+
+Parâmetros:
+
+anos (list): Lista de anos para os quais os dados devem ser extraídos.
+cidades (list): Lista de IDs de municípios para os quais os dados devem ser extraídos.
+main_dir (str, opcional): Diretório principal onde os dados processados serão salvos.
+ufs (str, opcional): Códigos das Unidades Federativas (UFs) para filtrar os dados.
+limit (str, opcional): Limite para a consulta SQL (pode ser usado para paginação ou restrição de resultados).
+Funcionamento:
+
+Define uma consulta SQL (query_rais) que utiliza a cláusula WITH para criar tabelas temporárias com dicionários de descrições para diversos atributos dos estabelecimentos.
+Realiza a seleção dos dados dos estabelecimentos, incluindo atributos como quantidade de vínculos, natureza do estabelecimento, CNAE, e outros detalhes.
+Adiciona uma condição WHERE para filtrar os dados com base no ano e nos CNAEs especificados.
+Utiliza a função extrair_dados_sql para executar a consulta SQL e processar os dados extraídos com base nos parâmetros fornecidos.
+Retorna o resultado do processamento dos dados.
+Consultas SQL:
+
+A consulta SQL utilizada (query_rais) realiza a extração dos seguintes dados:
+
+ano: Ano dos dados.
+sigla_uf: Sigla da UF.
+sigla_uf_nome: Nome da UF.
+id_municipio: Identificador do município.
+id_municipio_nome: Nome do município.
+quantidade_vinculos_ativos: Quantidade de vínculos ativos.
+quantidade_vinculos_clt: Quantidade de vínculos CLT.
+quantidade_vinculos_estatutarios: Quantidade de vínculos estatutários.
+natureza_estabelecimento: Descrição da natureza do estabelecimento.
+tamanho_estabelecimento: Descrição do tamanho do estabelecimento.
+tipo_estabelecimento: Descrição do tipo de estabelecimento.
+indicador_cei_vinculado: Indicador se o CEI está vinculado.
+indicador_pat: Indicador PAT.
+indicador_simples: Indicador de participação no Simples.
+indicador_atividade_ano: Indicador de atividade no ano.
+cnae_1 e cnae_2: Códigos CNAE e suas descrições detalhadas.
+subsetor_ibge: Descrição do subsetor IBGE.
+subatividade_ibge: Subatividade IBGE.
+Notas:
+
+A consulta SQL inclui junções com tabelas de referência e dicionários para enriquecer os dados com descrições e informações adicionais.
+A variável cnae_sql é utilizada para filtrar os dados com base na lista de CNAEs fornecida, utilizando expressões regulares para correspondência parcial.
+
+"""
+
+
+
 from __future__ import annotations
 import sys, json
 
@@ -6,14 +78,14 @@ with open('.\\Arquivos\\config.json') as config_file:
     sys.path.append(config['caminho_rede'])
 
 from Arquivos.ColetaDados.Extrator import extrair_dados_sql
-from Arquivos.ColetaDados.Tools import MainParameters
+from Arquivos.ColetaDados.ToolsColeta import MainParameters
 
 
 cnae_lista = MainParameters().cnae_analise()
 cnae_sql = "|".join(f"{cnae}" for cnae in cnae_lista)
 
 
-def extrair_rais(anos: list, cidades: list, save_dir: str = None, ufs: str = "", limit: str = ""):
+def extrair_rais(anos: list, cidades: list, main_dir: str = None, ufs: str = "", limit: str = ""):
 
     # Query gerada pelo site da Base dos Dados: https://basedosdados.org/dataset/3e7c4d58-96ba-448e-b053-d385a829ef00?table=86b69f96-0bfe-45da-833b-6edc9a0af213
     query_rais = """
@@ -113,7 +185,7 @@ def extrair_rais(anos: list, cidades: list, save_dir: str = None, ufs: str = "",
     anos=anos,
     cidades=cidades,
     query_base=query_rais,
-    save_dir=save_dir,
+    main_dir=main_dir,
     ufs=ufs,
     limit=limit
     )

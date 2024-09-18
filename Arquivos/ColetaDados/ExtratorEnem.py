@@ -1,3 +1,39 @@
+"""
+ExtratorEnem.py
+Este módulo contém uma função para extrair dados do Exame Nacional do Ensino Médio (ENEM) do Brasil.
+
+Dependências
+sys e json para manipulação de caminhos e configuração.
+extrair_dados_sql do módulo Extrator para executar consultas SQL e processar os dados extraídos.
+Funções
+extrair_enem
+Extrai dados do ENEM com base em informações sobre o desempenho dos alunos, características das escolas e dados socioeconômicos.
+
+Parâmetros:
+
+anos (list): Lista de anos para filtrar os dados.
+cidades (list): Lista de IDs de municípios para filtrar os dados.
+main_dir (str, opcional): Diretório principal onde os arquivos serão salvos.
+ufs (str, opcional): Unidade federativa para filtrar os dados.
+limit (str, opcional): Limitação adicional para a consulta SQL (não utilizado na consulta).
+Retorno:
+
+DataFrame com dados do ENEM, contendo colunas como ano, id_inscricao, faixa_etaria, sexo, id_municipio_residencia, sigla_uf_residencia, cor_raca, situacao_conclusao, ano_conclusao, tipo_escola, ensino, indicador_treineiro, id_municipio_escola, sigla_uf_escola, dependencia_administrativa_escola, localizacao_escola, situacao_funcionamento_escola, indicador_certificado, nome_certificadora, id_municipio_prova, sigla_uf_prova, presenca_objetiva, tipo_prova_objetiva, notas das competências objetivas e discursivas, e indicador_questionario_socioeconomico.
+Configuração
+O módulo carrega configurações de um arquivo JSON localizado no diretório '.\\Arquivos\\config.json'. Essas configurações incluem o caminho para a rede.
+
+Consulta SQL
+A consulta SQL é complexa e envolve:
+
+CTEs (Common Table Expressions) para criar dicionários de descrição de diferentes categorias de dados (faixa etária, sexo, cor/raça, situação de conclusão, etc.).
+Joins para combinar a tabela principal microdados com as tabelas de dicionário e diretórios de municípios e UF.
+Filtros para selecionar os dados baseados no ano, município da escola e UF da escola.
+Observações
+A função utiliza várias tabelas e dicionários para enriquecer os dados do ENEM com descrições legíveis.
+A consulta SQL filtra os dados de acordo com os anos, cidades e UFs fornecidos.
+"""
+
+
 from __future__ import annotations
 import sys, json
 
@@ -9,7 +45,7 @@ from Arquivos.ColetaDados.Extrator import extrair_dados_sql
 
 
 
-def extrair_enem(anos: list, cidades: list, save_dir: str = None, ufs: str = "", limit: str = ""):
+def extrair_enem(anos: list, cidades: list, main_dir: str = None, ufs: str = "", limit: str = ""):
 
     # Query gerada pelo site da Base dos Dados: https://basedosdados.org/dataset/3e9c8804-c31c-4f48-9a45-d67f1c21a859?table=9a9ad3b2-c21e-4cdb-8523-fda5a44abe29
     query_enem = """
@@ -301,7 +337,7 @@ LEFT JOIN `dicionario_presenca_redacao`
     anos=anos,
     cidades=cidades,
     query_base=query_enem,
-    save_dir=save_dir,
+    main_dir=main_dir,
     ufs=ufs,
     limit=limit
     )

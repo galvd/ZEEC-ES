@@ -1,22 +1,94 @@
+"""
+Bibliotecas Importadas:
+
+basedosdados para realizar consultas SQL no Google BigQuery.
+pandas para manipulação de dados.
+os, sys, json, gc para manipulação de arquivos e configurações.
+datetime para manipulação de datas.
+Configuração:
+
+O arquivo de configuração (config.json) é carregado para obter variáveis de ambiente e caminhos.
+Funções:
+
+extrair_transf_url(url: str, table_name: str, main_dir: str = None, cidades: list = [], ufs: list = [], anos = [])
+
+Extrai dados de uma URL no formato CSV, aplica filtros e transforma os dados para o formato Parquet.
+
+Parâmetros:
+
+url: URL para download do arquivo CSV.
+table_name: Nome da tabela, usado para exibição e identificação dos dados.
+main_dir: Diretório principal para salvar o arquivo Parquet.
+cidades: Lista de cidades para filtrar os dados.
+ufs: Lista de UFs (Unidades Federativas) para filtrar os dados.
+anos: Lista de anos para filtrar as colunas de dados.
+Processos:
+
+Faz o download e leitura do CSV.
+Filtra dados com base em cidades e UFs.
+Utiliza pd.melt para transformar colunas de anos em uma coluna única chamada ano.
+Limpa os dados e salva no formato Parquet se a lista de anos estiver vazia.
+extrair_dados_sql(table_name: str, query_base: str, main_dir: str = None, cidades: list = [], ufs: list = [], anos: list = [], mes: int = None, limit: str = "")
+
+Extrai dados de uma consulta SQL e salva os resultados em um arquivo Parquet.
+
+Parâmetros:
+
+table_name: Nome da tabela, usado para exibição e identificação dos dados.
+query_base: Query SQL base com placeholders.
+main_dir: Diretório principal para salvar o arquivo Parquet.
+cidades, ufs, anos, mes, limit: Parâmetros de filtragem e limitações para a consulta SQL.
+Processos:
+
+Constrói e executa a consulta SQL.
+Filtra os dados com base em cidades, UFs, anos e meses.
+Salva os dados em formato Parquet.
+baixar_e_processar_cnpjs(url_template: str, main_dir: str, cidades: list, ufs:list, method: function, anos: list = [])
+
+Faz o download e processamento de arquivos de CNPJ da Receita Federal, aplicando o método de processamento especificado.
+
+Parâmetros:
+
+url_template: Modelo da URL para download dos arquivos de CNPJ.
+main_dir: Diretório principal para salvar os arquivos.
+cidades, ufs, anos: Listas de cidades, UFs e anos para filtragem.
+method: Função que define o método de processamento (ex: multi_thread).
+Processos:
+
+Verifica e cria diretórios necessários.
+Loop pelos anos e meses para processar os arquivos.
+Verifica se o arquivo Parquet já foi gerado; se não, faz o download, descompacta e processa os arquivos.
+Unifica os arquivos Parquet após o processamento.
+Uso das Funções:
+
+As funções são utilizadas para diferentes etapas do processo de coleta e transformação de dados, dependendo da fonte e do formato dos dados.
+A função baixar_e_processar_cnpjs é responsável por coordenar o fluxo de trabalho para dados de CNPJ, enquanto extrair_transf_url e extrair_dados_sql são usadas para dados provenientes de arquivos CSV e consultas SQL, respectivamente.
+Notas:
+
+As funções fazem uso extensivo de mensagens de log (print) para acompanhar o progresso e diagnosticar possíveis erros.
+O script utiliza o módulo gc para a coleta de lixo, liberando memória após operações pesadas.
+"""
+
+
+
 from __future__ import annotations
 import basedosdados as bd
-import pandas as pd
-import urllib
-from bs4 import BeautifulSoup
-
-import requests, wget, os, sys, time, re, json, gc
+import pandas as pd 
+import os, sys, json, gc
+from datetime import datetime
 
 with open('.\\Arquivos\\config.json') as config_file:
     config = json.load(config_file)
     sys.path.append(config['caminho_rede'])
 
-from Arquivos.ColetaDados.Tools import save_parquet, clean_dots
+from Arquivos.ColetaDados.ToolsColeta import save_parquet, clean_dots, CnpjTreatment
+from Arquivos.TratamentoDados.ToolsTratamento import CnpjProcess
 
 cloud_id = config['cloud_id']
 
 
-def extrair_transf_url(url: str, table_name: str, save_dir: str = None, cidades: list = [], ufs: list = [], anos = []):
 
+def extrair_transf_url(url: str, table_name: str, main_dir: str = None, cidades: list = [], ufs: list = [], anos = []):
 
     # Ler o arquivo CSV diretamente da URL
     print("Iniciando download do csv do ".join([word.capitalize() for word in table_name.split(sep="_")]))
@@ -66,13 +138,12 @@ def extrair_transf_url(url: str, table_name: str, save_dir: str = None, cidades:
     print(df.head())
 
     if anos == []:
-        save_parquet(save_dir=save_dir, table_name=table_name, df=df)
+        save_parquet(main_dir=main_dir, table_name=table_name, df=df)
 
     print("Processamento dos dados do " + " ".join([word.capitalize() for word in table_name.split(sep="_")]) + " completo!")
 
 
-
-def extrair_dados_sql(table_name: str,  query_base: str, save_dir: str = None, cidades: list = [], ufs: list = [], anos: list = [], mes: int = None, limit: str = ""):
+def extrair_dados_sql(table_name: str,  query_base: str, main_dir: str = None, cidades: list = [], ufs: list = [], anos: list = [], mes: int = None, limit: str = ""):
     
     print(f"Iniciando download dos dados do " + " "" ".join([word.capitalize() for word in table_name.split(sep="_")]))
 
@@ -118,117 +189,56 @@ def extrair_dados_sql(table_name: str,  query_base: str, save_dir: str = None, c
             print(f"Dados de {ano} baixados com sucesso!")
 
         if ano == None:
-            save_parquet(save_dir=save_dir, table_name=table_name, df=df)
+            save_parquet(main_dir=main_dir, table_name=table_name, df=df)
         else:
-            save_parquet(save_dir=save_dir, table_name=table_name, df=df, ano = ano)
+            save_parquet(main_dir=main_dir, table_name=table_name, df=df, ano = ano)
         return df
     
     print("Processamento dos dados do " + " ".join([word.capitalize() for word in table_name.split(sep="_")]) + " completo!")
     
 
+def baixar_e_processar_cnpjs(url_template: str, main_dir: str, cidades: list, ufs:list, method: function, anos: list = []):
+        treat = CnpjTreatment()
+        process = CnpjProcess()
+        # thread_num = method().num_processors
+        # method = method()
+        cnpj_dir = os.path.join(main_dir, "Dados", "Cnpj Empresas")
 
+        print('Iniciando download dos arquivos de CNPJs da Receita Federal')
 
-def extrair_cnpj_url(url: str, ano: str, mes: str, dir: str = None, count: int = 0):
-    
-    # requisição da página
-    page = requests.get(url)   
-    data = page.text
-    soup = BeautifulSoup(data)
-    max_retries = 99
-
-    # Pasta de destino para os arquivos zip
-    pasta_compactados = dir  # Local dos arquivos zipados da Receita
-
-    # Verifica se a pasta existe, se não, cria a pasta
-    if not os.path.exists(pasta_compactados):
-        os.makedirs(pasta_compactados)
-
-    print('Relação de Arquivos em ' + url)
-
-    def get_file_size(url):
-        """Função para obter o tamanho do arquivo via Content-Length no cabeçalho HTTP"""
-        response = requests.head(url)
-        size = response.headers.get('Content-Length')
-        if size:
-            size = int(size)
-            # Converte bytes para MB
-            size_in_mb = size / (1024 * 1024)
-            return size_in_mb
-        return None
-    
-    # Função para verificar se o arquivo já existe
-    def arquivo_existe(arquivo_original, arquivo_novo):
-        arq_original = os.path.exists(os.path.join(pasta_compactados, arquivo_original))
-        arq_novo = os.path.exists(os.path.join(pasta_compactados, arquivo_novo))
-        return arq_original or arq_novo
-    
-    print(soup.find_all('a'))
-    if soup.find_all('a') == []:
-        print(f'''Link para {ano}_{mes} pode não estar disponível ainda, confirme no link http://200.152.38.155/CNPJ/dados_abertos_cnpj. Caso esteja correto, todos os downloads foram concluídos.''')
-        return ''
-         
-    for link in soup.find_all('a'):
-        # Verifica se o link é de um arquivo estabelecimentos\d.zip
-        if re.search(fr'stabelecimentos{count}\.zip$', str(link.get('href'))):
-            cam = link.get('href')
-            full_url = cam if cam.startswith('http') else url + cam
+        mes_atual = datetime.today().month
+        lista_meses = [f"{mes:02d}" for mes in range(mes_atual-4, mes_atual)]
             
-            nome_arquivo_original = os.path.basename(full_url)  # Nome original do arquivo
-            nome_arquivo_novo = f'Estabelecimentos{count}_{ano}_{mes}.zip'  # Nome novo do arquivo
+        #loop em anos, pegar meses com datetime
+        for ano in anos:
+            if ano != datetime.today().year:
+                print(f'Ano de {ano} inexistente no repositório. Processo para {ano} finalizado.')
+                continue
 
-            # Verifica se o arquivo já existe
-            if arquivo_existe(nome_arquivo_original, nome_arquivo_novo):
-                print(f"O arquivo {nome_arquivo_novo} já existe. Pulando download.")
-                return nome_arquivo_novo # Sai da função, pois o arquivo já existea
-            
-            
-            # Obter o tamanho do arquivo
-            file_size = get_file_size(full_url)
-            
-            if file_size:
-                print(f"{full_url} - {file_size:.2f} MB")
-            else:
-                print(f"{full_url} - Tamanho: Não disponível")
+            for mes in lista_meses:
 
+                # Checando se o parquet objetivo do ano_mes já foi gerado
+                parquet_final = os.path.exists(os.path.join(cnpj_dir, f'cnpjs_{ano}_{mes}.parquet'))
+
+                if parquet_final:
+                    print(f'O arquivo objetivo cnpjs_{ano}_{mes}.parquet já foi gerado, removendo arquivos e indo para o próximo mês')
+
+                    # deleta zips e csv
+                    process.limpar_residuo(ano, mes, cnpj_dir)
+                    continue
                 
-    def bar_progress(current, total, width=80):
-        if total>=2**20:
-            tbytes='Megabytes'
-            unidade = 2**20
-        else:
-            tbytes='kbytes'
-            unidade = 2**10
-        progress_message = f"Download status: %d%% [%d / %d] {tbytes}" % (current / total * 100, current//unidade, total//unidade)
-        sys.stdout.write("\r" + progress_message)
-        sys.stdout.flush()
+                url_formatada = url_template.format(ano=ano, mes=mes)
+                soup, file_count = treat.check_url(url= url_formatada, cnpj_dir= cnpj_dir, ano= ano, mes= mes)
 
-        
-    # Tentativa de download com possibilidade de retries
-    caminho_arquivo_original = os.path.join(pasta_compactados, nome_arquivo_original)
-    for attempt in range(max_retries):
-        try:
-            print(f'\n{time.asctime()} - Iniciando download do item {count}: {full_url}')
-            wget.download(full_url, out=caminho_arquivo_original, bar=bar_progress)
+                # print(f'Iniciando processamento com número de threads alocadas: {thread_num}')
 
-            # Renomeia o arquivo baixado para o novo nome
-            caminho_arquivo_novo = os.path.join(pasta_compactados, nome_arquivo_novo)
-            os.rename(caminho_arquivo_original, caminho_arquivo_novo)
-            print(f"\nArquivo baixado e renomeado para {caminho_arquivo_novo}")
-            return nome_arquivo_novo
+                print(url_formatada, cnpj_dir, cidades, ufs, anos)
 
-        except urllib.error.ContentTooShortError as e:
-            print(f"\nErro ao baixar o arquivo (tentativa {attempt + 1}/{max_retries}): {e}")
-            print("Tentando novamente...")
-            time.sleep(5)  # Pequena pausa antes de tentar novamente
+                # funções de method em Arquivos.TratamentoDados.ToolsTratamento
+                # Função que realiza o loot para o número de arquivos na url
+                method(cnpj_dir, ano, mes, url_formatada, file_count, cidades, ufs) # Exemplo de method: CnpjProcess.MultiThread.routine
 
-        except OSError as e:
-            print(f"\nErro ao renomear o arquivo {caminho_arquivo_original}: {e}")
-            return None
-
-
-#lista dos arquivos
-r'http://200.152.38.155/CNPJ/dados_abertos_cnpj/AAAA-mm/Estabelecimentos\d.zip'
-
-
-
-
+                # Limpar resíduos após o processamento
+                process.limpar_residuo(ano, mes, cnpj_dir)
+                print('Unificando parquets')
+                process.unify_parquet(ano= ano, mes= mes, cnpj_dir= cnpj_dir)

@@ -35,7 +35,7 @@ Os dados são extraídos das seguintes bases e relatórios:
 
 Certifique-se de ter os seguintes requisitos instalados:
 
-- **Python 3.9** ou posterior
+- **Python 3.9** (preferencialmente em venv)
 - Bibliotecas Python:
   - `pandas`
   - `dask`

@@ -73,7 +73,7 @@ Retorna o valor convertido para float ou None se não for possível a conversão
 
 from __future__ import annotations
 import pandas as pd
-import os, zipfile, time, requests, os, re, sys, wget, urllib
+import os, zipfile, time, requests, os, re, sys, wget, urllib, gdown
 from bs4 import BeautifulSoup
 from dataclasses import dataclass
 
@@ -396,8 +396,33 @@ def clean_dots(valor):
             return None
     return valor
 
+def bar_progress(current, total, width=80):
+    """Exibe a barra de progresso para acompanhar a leitura dos arquivos."""
+    progress = current / total
+    progress_message = f"Baixando arquivos: {int(progress * 100)}% [{current} / {total}]"
+    sys.stdout.write("\r" + progress_message)
+    sys.stdout.flush()
 
-
+def download_overwrite(dw_path: str, file_name: str, url: str):
+    file_path = os.path.join(dw_path, file_name)
+    old_file = os.path.join(dw_path, 'old_' + file_name)    
+    # Verifica se o arquivo já existe antes de renomear
+    if os.path.exists(file_path):
+        os.rename(file_path, old_file)
+    try:
+        # Faz o download do novo arquivo
+        wget.download(url=url, out=file_path, bar= bar_progress)
+        # Se o download foi bem-sucedido, remove o arquivo antigo
+        if os.path.exists(old_file):
+            os.remove(old_file)
+    except:
+        try:
+            gdown.download(url, file_path, quiet=False)
+        except Exception as e:
+            # Caso ocorra um erro, restaura o arquivo antigo
+            print(f"Erro ao baixar o arquivo: {e}")
+            if os.path.exists(old_file):
+                os.rename(old_file, file_path)
 
 
 

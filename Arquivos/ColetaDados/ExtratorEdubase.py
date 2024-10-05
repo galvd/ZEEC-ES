@@ -81,6 +81,5 @@ def extrair_edu_base(anos: list, cidades: list, main_dir: str = None, ufs: str =
     limit=limit
     )
 
-    return processamento_edu_base
 
 

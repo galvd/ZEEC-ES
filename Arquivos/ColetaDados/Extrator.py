@@ -150,9 +150,18 @@ def extrair_dados_sql(table_name: str,  query_base: str, main_dir: str = None, c
     # Converte as listas em strings apropriadas para uso na query SQL
     cidades_sql = ", ".join(f"'{cidade}'" for cidade in cidades)
     uf_sql = ", ".join(f"'{uf}'" for uf in ufs)
-    
 
     for ano in anos:
+        # Caminho para verificar se o arquivo Parquet já existe
+        dir_path = os.path.join(main_dir, "Dados", " ".join([word.capitalize() for word in table_name.split(sep="_")]))
+        file_suffix = f"_{ano}"
+        file_path = os.path.join(dir_path, f'{table_name}{file_suffix}.parquet')
+
+        # Checagem se o arquivo Parquet do ano já existe
+        if os.path.exists(file_path):
+            print(f"Arquivo Parquet para {ano} já existe em {file_path}. Pulando a extração desse ano.")
+            continue
+
         # Substitui placeholders no query_base
         query = query_base.format(ano=ano, cidades=cidades_sql, ufs=uf_sql)
         
@@ -192,7 +201,6 @@ def extrair_dados_sql(table_name: str,  query_base: str, main_dir: str = None, c
             save_parquet(main_dir=main_dir, table_name=table_name, df=df)
         else:
             save_parquet(main_dir=main_dir, table_name=table_name, df=df, ano = ano)
-        return df
     
     print("Processamento dos dados do " + " ".join([word.capitalize() for word in table_name.split(sep="_")]) + " completo!")
     
@@ -200,14 +208,12 @@ def extrair_dados_sql(table_name: str,  query_base: str, main_dir: str = None, c
 def baixar_e_processar_cnpjs(url_template: str, main_dir: str, cidades: list, ufs:list, method: function, anos: list = []):
         treat = CnpjTreatment()
         process = CnpjProcess()
-        # thread_num = method().num_processors
-        # method = method()
-        cnpj_dir = os.path.join(main_dir, "Dados", "Cnpj Empresas")
+        cnpj_dir = os.path.join(main_dir, "Dados", "Cnpj Estabelecimentos")
 
         print('Iniciando download dos arquivos de CNPJs da Receita Federal')
 
         mes_atual = datetime.today().month
-        lista_meses = [f"{mes:02d}" for mes in range(mes_atual-4, mes_atual)]
+        lista_meses = [f"{mes:02d}" for mes in range(mes_atual-5, mes_atual)]
             
         #loop em anos, pegar meses com datetime
         for ano in anos:
@@ -242,3 +248,5 @@ def baixar_e_processar_cnpjs(url_template: str, main_dir: str, cidades: list, uf
                 process.limpar_residuo(ano, mes, cnpj_dir)
                 print('Unificando parquets')
                 process.unify_parquet(ano= ano, mes= mes, cnpj_dir= cnpj_dir)
+                process.estabelecimentos_treat(ano = ano, main_dir=main_dir, mes=mes)
+

@@ -90,13 +90,10 @@ def extrair_censo_agua(cidades: list, main_dir: str = None, uf = list, limit: st
     table_name= "censo_agua",
     anos=[2022],
     cidades=cidades,
-    ufs=uf,
     query_base=query_censo_agua,
     main_dir=main_dir,
     limit=limit
     )
-
-    return processamento_censo_agua
 
 
 def extrair_censo_esgoto(cidades: list, main_dir: str = None, ufs = list, limit: str = ""):
@@ -120,13 +117,10 @@ def extrair_censo_esgoto(cidades: list, main_dir: str = None, ufs = list, limit:
     table_name= "censo_esgoto",
     anos=[2022],
     cidades=cidades,
-    ufs=ufs,
     query_base=query_censo_esgoto,
     main_dir=main_dir,
     limit=limit
     )
-
-    return processamento_censo_esgoto
 
 
 def extrair_censo_pop(cidades: list, main_dir: str = None, ufs = list, limit: str = ""):
@@ -154,13 +148,10 @@ def extrair_censo_pop(cidades: list, main_dir: str = None, ufs = list, limit: st
     table_name= "censo_pop",
     anos=[2022],
     cidades=cidades,
-    ufs=ufs,
     query_base=query_censo_pop,
     main_dir=main_dir,
     limit=limit
     )
-
-    return processamento_censo_pop
 
 
 def extrair_censo_alfabetizados(cidades: list, main_dir: str = None, ufs = list, limit: str = ""):
@@ -186,10 +177,7 @@ def extrair_censo_alfabetizados(cidades: list, main_dir: str = None, ufs = list,
     table_name= "censo_alfabetizados",
     anos=[2022],
     cidades=cidades,
-    ufs=ufs,
     query_base=query_censo_alfabetizados,
     main_dir=main_dir,
     limit=limit
     )
-
-    return processamento_censo_alfabetizados

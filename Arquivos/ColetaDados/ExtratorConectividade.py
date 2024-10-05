@@ -96,8 +96,6 @@ def extrair_internet_acs(anos: list, cidades: list, main_dir: str = None, ufs: s
     limit=limit
     )
 
-    return processamento_internet
-
 
 def extrair_internet_dens(anos: list, cidades: list, main_dir: str = None, ufs: str = "", mes: int = None, limit: str = ""):
 
@@ -131,5 +129,3 @@ def extrair_internet_dens(anos: list, cidades: list, main_dir: str = None, ufs: 
     mes = mes,
     limit=limit
     )
-
-    return processamento_internet

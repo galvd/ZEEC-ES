@@ -157,8 +157,6 @@ def extrair_ies(anos: list, cidades: list, main_dir: str = None, ufs: str = "", 
     limit=limit
     )
 
-    return processamento_ies
-
 
 def extrair_cursos_sup(anos: list, cidades: list, main_dir: str = None, ufs: str = "", limit: str = ""):
 
@@ -434,5 +432,3 @@ def extrair_cursos_sup(anos: list, cidades: list, main_dir: str = None, ufs: str
     ufs=ufs,
     limit=limit
     )
-
-    return processamento_cursos

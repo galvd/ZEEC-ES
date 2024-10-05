@@ -78,7 +78,7 @@ from Arquivos.ColetaDados.ExtratorEnem import extrair_enem
 from Arquivos.ColetaDados.ExtratorEdubase import extrair_edu_base
 from Arquivos.ColetaDados.ExtratorPib import extrair_pib_cidades
 from Arquivos.ColetaDados.ExtratorIes import extrair_ies, extrair_cursos_sup
-from Arquivos.ColetaDados.ExtratorCNPJ import extrair_empresas_bd, extrair_empresas_url, extrair_munic_dict
+from Arquivos.ColetaDados.ExtratorCNPJ import extrair_empresas_bd, extrair_estabelecimentos_url, extrair_estabelecimentos_bd
 from Arquivos.ColetaDados.ExtratorConectividade import extrair_internet_acs, extrair_internet_dens
 from Arquivos.ColetaDados.ExtratorCenso import extrair_censo_agua, extrair_censo_esgoto, extrair_censo_pop, extrair_censo_alfabetizados
 from Arquivos.ColetaDados.ExtratorTransferencias import extrair_transferencias_fex, extrair_transferencias_fpm, extrair_transferencias_fundeb
@@ -97,167 +97,159 @@ cod_rf = parametros.cod_rf()
 url_cnpj = parametros.url_cnpjs()
 
 
-limit = "LIMIT 10" # argumento opcional para teste
+limit = "" # argumento opcional para teste: LIMIT 10
 
 
 ### Extração dos dados
 
-## RAIS
+## RAIS ######################  JÁ COLETADO PARA < 2024
 
-extrair_rais(
-    anos = anos_relatorio,
-    cidades = nome_mun,
-    main_dir = proj_dir,
-    ufs = uf,
-    limit = limit
-    )
+# extrair_rais(
+#     anos = anos_relatorio,
+#     cidades = nome_mun,
+#     main_dir = proj_dir,
+#     ufs = uf,
+#     limit = limit
+#     )
 
 
 ## CAGED
 
-extrair_caged(
-    anos = anos_relatorio,
-    cidades = nome_mun,
-    main_dir = proj_dir,
-    ufs = uf,
-    mes = 12,
-    limit = limit
-    )
+# extrair_caged(
+#     anos = anos_relatorio,
+#     cidades = nome_mun,
+#     main_dir = proj_dir,
+#     ufs = uf,
+#     limit = limit
+#     )
 
 
-## Censo
+# ## Censo ######################  JÁ COLETADO PARA < 2024
 
-extrair_censo_pop(
-    cidades = nome_mun,
-    main_dir = proj_dir,
-    limit = limit
-    )
+# extrair_censo_pop(
+#     cidades = nome_mun,
+#     main_dir = proj_dir,
+#     limit = limit
+#     )
 
-extrair_censo_agua(
-    cidades = nome_mun,
-    main_dir = proj_dir,
-    limit = limit
-    )
+# extrair_censo_agua(
+#     cidades = nome_mun,
+#     main_dir = proj_dir,
+#     limit = limit
+#     )
 
-extrair_censo_esgoto(
-    cidades = nome_mun,
-    main_dir = proj_dir,
-    limit = limit
-    )
+# extrair_censo_esgoto(
+#     cidades = nome_mun,
+#     main_dir = proj_dir,
+#     limit = limit
+#     )
 
-extrair_censo_alfabetizados(
-    cidades = nome_mun,
-    main_dir = proj_dir,
-    limit = limit
-    )
-
-
-# PIB Municípios
-
-extrair_pib_cidades(
-    anos = anos_relatorio,
-    cidades = nome_mun,
-    main_dir = proj_dir,
-    limit = limit
-    )
+# extrair_censo_alfabetizados(
+#     cidades = nome_mun,
+#     main_dir = proj_dir,
+#     limit = limit
+#     )
 
 
-## Acesso à Internet Banda Larga
+# # PIB Municípios ######################  JÁ COLETADO PARA < 2024
 
-extrair_internet_acs(
-    anos = anos_relatorio,
-    cidades = nome_mun,
-    main_dir = proj_dir,
-    ufs = uf,
-    mes = 12,
-    limit = limit
-    )
-
-extrair_internet_dens(
-    anos = anos_relatorio,
-    cidades = nome_mun,
-    main_dir = proj_dir,
-    ufs = uf,
-    mes = 12,
-    limit = limit
-    )
+# extrair_pib_cidades(
+#     anos = anos_relatorio,
+#     cidades = nome_mun,
+#     main_dir = proj_dir,
+#     limit = limit
+#     )
 
 
-## Ensino Superior
-extrair_cursos_sup(
-    anos = anos_relatorio,
-    cidades = nome_mun,
-    main_dir = proj_dir,
-    ufs = uf,
-    limit = limit
-    )
+# ## Acesso à Internet Banda Larga ######################  JÁ COLETADO PARA < 2024
 
-extrair_ies(
-    anos = anos_relatorio,
-    cidades = nome_mun,
-    main_dir = proj_dir,
-    ufs = uf,
-    limit = limit
-    )
+# extrair_internet_acs(
+#     anos = anos_relatorio,
+#     cidades = nome_mun,
+#     main_dir = proj_dir,
+#     ufs = uf,
+#     limit = limit
+#     )
 
-
-## Educação Básica
-# # municípios indexados pelo código ibge
-extrair_edu_base(
-    anos = anos_relatorio,
-    cidades = cod_ibge,
-    main_dir = proj_dir,
-    ufs = uf,
-    limit = limit
-    )
+# extrair_internet_dens(
+#     anos = anos_relatorio,
+#     cidades = nome_mun,
+#     main_dir = proj_dir,
+#     ufs = uf,
+#     limit = limit
+#     )
 
 
-## ENEM
+# ## Ensino Superior ######################  JÁ COLETADO PARA < 2024
+# extrair_cursos_sup(
+#     anos = anos_relatorio,
+#     cidades = nome_mun,
+#     main_dir = proj_dir,
+#     ufs = uf,
+#     limit = limit
+#     )
+
+# extrair_ies(
+#     anos = anos_relatorio,
+#     cidades = nome_mun,
+#     main_dir = proj_dir,
+#     ufs = uf,
+#     limit = limit
+#     )
+
+
+# ## Educação Básica
 # municípios indexados pelo código ibge
-extrair_enem(
-    anos = anos_relatorio,
-    cidades = cod_ibge,
-    main_dir = proj_dir,
-    ufs = uf,
-    limit = limit
-    )
+# extrair_edu_base(
+#     anos = anos_relatorio,
+#     cidades = cod_ibge,
+#     main_dir = proj_dir,
+#     ufs = uf,
+#     limit = limit
+#     )
 
-# Transferëncias Municipais
 
-extrair_transferencias_fex(cidades= nome_mun, 
-                           main_dir = proj_dir,
-                           ufs = uf)
+# ## ENEM
+# # municípios indexados pelo código ibge
+# extrair_enem(
+#     anos = anos_relatorio,
+#     cidades = cod_ibge,
+#     main_dir = proj_dir,
+#     ufs = uf,
+#     limit = limit
+#     )
 
-extrair_transferencias_fundeb(cidades= nome_mun, 
-                           main_dir = proj_dir,
-                           ufs = uf)
+# # Transferëncias Municipais
 
-extrair_transferencias_fpm(cidades= nome_mun, 
-                           main_dir = proj_dir,
-                           ufs = uf)
+# extrair_transferencias_fex(cidades= nome_mun, 
+#                            main_dir = proj_dir,
+#                            ufs = uf)
+
+# extrair_transferencias_fundeb(cidades= nome_mun, 
+#                            main_dir = proj_dir,
+#                            ufs = uf)
+
+# extrair_transferencias_fpm(cidades= nome_mun, 
+#                            main_dir = proj_dir,
+#                            ufs = uf)
 
 
 ## CNPJs
-extrair_empresas_bd(
+extrair_estabelecimentos_bd( 
     anos = anos_relatorio,
-    cidades = cod_ibge,
     main_dir = proj_dir,
     ufs = uf,
     limit = limit
     )
 
+
 # habilitando o processamento paralelo para download e tratamento dos dados de CNPJ
 if __name__ == '__main__':
-    extrair_empresas_url(anos = anos_relatorio,
+    extrair_estabelecimentos_url(anos = anos_relatorio,
         cidades = cod_rf,
         main_dir = proj_dir,
-        processadores = 'um',
+        processadores = 'multi', # um, dois, multi
         ufs = uf)
-
-## Dicionário de municípios com código IBGE e Código RF
-# extrair_empresas_dict(
-#     main_dir = proj_dir
-#     )
 
 
 print("Processamento dos dados completo")

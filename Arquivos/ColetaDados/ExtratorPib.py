@@ -92,11 +92,9 @@ def extrair_pib_cidades(anos: list, cidades: list, main_dir: str = None, ufs = l
     table_name= "pib_municipios",
     anos=anos,
     cidades=cidades,
-    ufs=ufs,
     query_base=query_pib,
     main_dir=main_dir,
     limit=limit
     )
 
-    return processamento_pib
 

@@ -176,8 +176,8 @@ def extrair_rais(anos: list, cidades: list, main_dir: str = None, ufs: str = "",
         ano = {ano}
 
     """
-    query_rais+= f"""AND (REGEXP_CONTAINS(dados.cnae_1, r'^({cnae_sql})') 
-                        OR REGEXP_CONTAINS(dados.cnae_2, r'^({cnae_sql})'))\n"""
+    # query_rais+= f"""AND (REGEXP_CONTAINS(dados.cnae_1, r'^({cnae_sql})') 
+    #                     OR REGEXP_CONTAINS(dados.cnae_2, r'^({cnae_sql})'))\n"""
 
     
     processamento_rais = extrair_dados_sql(
@@ -190,7 +190,6 @@ def extrair_rais(anos: list, cidades: list, main_dir: str = None, ufs: str = "",
     limit=limit
     )
 
-    return processamento_rais
 
 
 

@@ -108,8 +108,9 @@ Parâmetros: Igual à core_tasks_mt.
 
 
 from __future__ import annotations
-import os, concurrent.futures, sys, json
+import os, concurrent.futures, sys, json, unicodedata
 import dask.dataframe as dd
+import polars as pl
 import pandas as pd
 from dataclasses import dataclass
 from glob import glob
@@ -169,6 +170,7 @@ class CnpjProcess:
         print('Iniciando leitura dos csv para conversão')
         for arq in arq_descompactados:
             print(f'Lendo o csv n{count}' + arq)
+
             ddf = dd.read_csv(arq, sep=';', header=None, names=colunas_estabelecimento, encoding='latin1', dtype=str, na_filter=None)
             ddf = ddf[['cnpj_basico','cnpj_ordem', 'cnpj_dv','matriz_filial', 
                 'situacao_cadastral','data_situacao_cadastral', 
@@ -199,14 +201,21 @@ class CnpjProcess:
             ddf.to_parquet(path = os.path.join(cnpj_dir, 'cnpj_url', f'cnpjs_{ano}_{mes}', parquet_intermediario))
             
     def unify_parquet(self, ano, mes, cnpj_dir, count = 99):
-        parquet_final = os.path.join(cnpj_dir, f'cnpjs_{ano}_{mes}.parquet')
+        parquet_final = os.path.join(cnpj_dir, f'cnpj_estabelecimentos_{ano}_{mes}.parquet')
 
         try:
             df = pd.read_parquet(path = os.path.join(cnpj_dir, 'cnpj_url', f'cnpjs_{ano}_{mes}'))
             print(df.head())
             
-            print(parquet_final)
-            df.to_parquet(parquet_final)
+            df['data_inicio_atividades'] = pd.to_datetime(df['data_inicio_atividades'], format='%Y%m%d', errors='coerce')
+            df['data_situacao_cadastral'] = pd.to_datetime(df['data_situacao_cadastral'], format='%Y%m%d', errors='coerce')
+            df['cnpj'] = df['cnpj_basico'].astype(str) + df['cnpj_ordem'].astype(str) + df['cnpj_dv'].astype(str)
+            df.rename({'matriz_filial'	:'identificador_matriz_filial', 
+                            'data_inicio_atividades':	'data_inicio_atividade',
+                            'municipio': 'id_municipio_rf'}, inplace=True)
+            df['data'] = f'{ano}-{mes}-01'
+
+            df.to_parquet(parquet_final, index= False)
 
         except FileNotFoundError as e:
             print(f'Processo Finalizado. Arquivos parquet para {ano}-{mes} não encontrado: {e}')
@@ -222,6 +231,97 @@ class CnpjProcess:
 
             arquivos = csv_to_del + zip_to_del + tmp_to_del
             list(map(os.remove, arquivos))
+    
+    def estabelecimentos_treat(self, ano:int, main_dir: str, mes='' ):
+        file_name = f'cnpj_estabelecimentos_{ano}'
+        file_name += f'_{mes}' if mes != '' else ''
+        file_name += '.parquet'
+        file_path = os.path.join(main_dir, 'Dados', 'Cnpj Estabelecimentos', file_name)
+
+        # Caminho para verificar se o arquivo Parquet já existe
+        if os.path.exists(file_path):
+            return
+
+        # Lê o arquivo Parquet 
+        try:
+            df = pl.read_parquet(file_path)
+        except:
+            print(f'Não foi possível ler o parquet de {ano}')
+            return
+
+        print(df.columns)
+
+        # # Remove colunas não necessárias
+        if mes == '':
+            df = df.drop(['identificador_matriz_filial', 'nome_cidade_exterior', 'id_pais', 'id_municipio_nome'])
+            df = df.with_columns([
+                pl.col('sigla_uf').alias('uf'),
+                pl.col('cnae_fiscal_principal').alias('cnae_fiscal')
+            ])
+
+            df = df.with_columns([
+            pl.col("data").cast(pl.Utf8),
+            pl.col("data_inicio_atividade").cast(pl.Utf8),
+            pl.col("data_situacao_cadastral").cast(pl.Utf8)
+            ])    
+
+            # Trabalha as colunas de data
+            df = df.with_columns([
+                pl.col("data").str.strptime(pl.Date, format="%Y-%m-%d").alias("data"),
+                pl.col("data_inicio_atividade").str.strptime(pl.Date, format="%Y-%m-%d").alias("data_inicio_atividade"),
+                pl.col("data_situacao_cadastral").str.strptime(pl.Date, format="%Y-%m-%d").alias("data_situacao_cadastral")
+            ])
+
+        elif len(mes) == 2:
+            df = df.drop(['cnpj_basico', 'cnpj_ordem', 'cnpj_dv', 'matriz_filial',
+                        'tipo_logradouro', 'logradouro', 'numero', 'complemento'])
+            
+            df = df.with_columns([
+                pl.col('municipio').alias('id_municipio_rf'),
+                pl.col('data_inicio_atividades').alias('data_inicio_atividade')])
+            
+            df = df.with_columns([
+            pl.col("data").cast(pl.Utf8),
+            pl.col("data_inicio_atividade").cast(pl.Utf8),
+            pl.col("data_situacao_cadastral").cast(pl.Utf8)
+            ])    
+
+            df = df.with_columns([
+                pl.col("data").str.strptime(pl.Date, format="%Y-%m-%d").alias("data"),
+                pl.col("data_inicio_atividade").str.strptime(pl.Date, format="%Y-%m-%d %H:%M:%S.%f").alias("data_inicio_atividade"),
+                pl.col("data_situacao_cadastral").str.strptime(pl.Date, format="%Y-%m-%d %H:%M:%S.%f").alias("data_situacao_cadastral")
+                ])
+
+        df = df.with_columns(pl.col("bairro").map_elements(lambda x: str(normalize_text(x)).title()))
+
+        string_dtype = pl.String
+        cep_dict = pl.read_csv(os.path.join(os.getcwd(), 'Dados', 'Ceps Censo', 'ceps_censo.csv'),schema={'cep': string_dtype,	'logradouro': string_dtype,	
+                                                                                                        'localidade': string_dtype, 'id_municipio': string_dtype, 
+                                                                                                        'nome_municipio': string_dtype, 'sigla_uf': string_dtype, 
+                                                                                                        'estabelecimentos': string_dtype, 'centroide': string_dtype})
+        cep_dict = cep_dict.drop(['logradouro', 'id_municipio', 'sigla_uf', 'estabelecimentos', 'centroide'])\
+                        .rename({'localidade': 'bairro', 'nome_municipio': 'id_municipio_nome'})
+        
+        cep_repo = pl.read_parquet(os.path.join(os.getcwd(), 'Dados', 'Ceps Censo', 'ceps_es.parquet'))
+        
+        ceps = pl.concat([cep_dict, cep_repo]).unique(subset= ['cep'],keep='last')\
+                                            .with_columns(pl.col("bairro").map_elements(lambda x: str(normalize_text(x)).title()))
+        
+        # Realiza o left join entre df e ceps usando 'cep' como chave
+        df = df.join(ceps, on='cep', how='left')
+
+        # Substitui a coluna df['bairro'] pela ceps['bairro'] quando disponível
+        df = df.with_columns([
+            pl.when(pl.col("bairro_right").is_not_null())
+            .then(pl.col("bairro_right"))
+            .otherwise(pl.col("bairro"))
+            .alias("bairro")
+        ])
+
+        # Remove a coluna de bairro duplicada (bairro_right)
+        df = df.drop("bairro_right")
+        # Salva o DataFrame como Parquet
+        df.write_parquet(file_path)
 
     def core_tasks_mt(self, count, url_formatada, cnpj_dir, ano, mes,  file_count,  cidades: list, ufs: list):
         treat = CnpjTreatment()
@@ -306,15 +406,12 @@ def dual_thread(cnpj_dir: str, ano: int, mes: str, url_formatada: str, file_coun
     process.core_tasks_dt(downloader, processer, file_count)
 
 
-
-
-
 def multi_thread(cnpj_dir: str, ano: int, mes: str, url_formatada: str, file_count: int, cidades: list, ufs: list):
     process = CnpjProcess()
 
     num_processors = int(min(cpu_count() - 4, 10)/3) # calcula o número de threads que serão utilizadas, arredondando pra baixo
 
-    print('entro no routine multi')
+    print('entrou no routine multi')
     
     # Lista dos arquivos a serem baixados (apenas números do arquivo)
     arquivos_para_baixar = [count for count in range(0, file_count)]
@@ -324,6 +421,10 @@ def multi_thread(cnpj_dir: str, ano: int, mes: str, url_formatada: str, file_cou
     # Criar e configurar o pool de processos
     with Pool(processes=num_processors) as pool:
         # Em vez de passar o `soup`, passar os dados relevantes para o pool
-        tasks = [(count, url_formatada, cnpj_dir, ano, mes) for count in arquivos_para_baixar]
+        tasks = [(count, url_formatada, cnpj_dir, ano, mes, file_count, list(cidades), list(ufs)) for count in arquivos_para_baixar]
         pool.starmap(process.core_tasks_mt, tasks)  # Envia tarefas para o pool e aguarda a conclusão
 
+def normalize_text(text):
+    """Normalizes text by removing diacritics and converting to lowercase."""
+    normalized_text = unicodedata.normalize("NFKD", text)
+    return normalized_text.encode("ASCII", "ignore").decode("ASCII").lower()

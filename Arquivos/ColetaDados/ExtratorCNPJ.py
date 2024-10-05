@@ -62,16 +62,18 @@ with open('.\\Arquivos\\config.json') as config_file:
 
 from Arquivos.ColetaDados.Extrator import extrair_dados_sql, baixar_e_processar_cnpjs
 from Arquivos.ColetaDados.ToolsColeta import MainParameters
+from Arquivos.TratamentoDados.ToolsTratamento import one_thread, dual_thread, multi_thread, CnpjProcess
 
 param = MainParameters()
 cnae_lista = param.cnae_analise()
 cnae_sql = "|".join(f"{cnae}" for cnae in cnae_lista)
 
 
-def extrair_empresas_bd(anos: list, cidades: list, main_dir: str = None, ufs: list = [], mes: int = None, limit: str = ""):
+def extrair_estabelecimentos_bd(anos: list, main_dir: str = None, ufs: list = [], limit: str = ""):
+    # anos_sql = ", ".join(f"{ano}" for ano in anos)
 
     # Query gerada pelo site da Base dos Dados: https://basedosdados.org/dataset/e43f0d5b-43cf-4bfb-8d90-c38a4e0d7c4f?table=b8432ff5-06c8-45ca-b8b6-33fceb24089d
-    query_empresas = """
+    query_estabelecimentos = """
             WITH 
         dicionario_identificador_matriz_filial AS (
             SELECT
@@ -104,8 +106,7 @@ def extrair_empresas_bd(anos: list, cidades: list, main_dir: str = None, ufs: li
                 AND id_tabela = 'estabelecimentos'
         )
         SELECT
-            EXTRACT(YEAR FROM data) AS ano,
-            EXTRACT(MONTH FROM data) AS mes,
+            data,
             cnpj,
             descricao_identificador_matriz_filial AS identificador_matriz_filial,
             descricao_situacao_cadastral AS situacao_cadastral,
@@ -117,14 +118,8 @@ def extrair_empresas_bd(anos: list, cidades: list, main_dir: str = None, ufs: li
             cnae_fiscal_principal,
             cnae_fiscal_secundaria,
             dados.sigla_uf AS sigla_uf,
-            diretorio_sigla_uf.nome AS sigla_uf_nome,
-            dados.id_municipio AS id_municipio,
             diretorio_id_municipio.nome AS id_municipio_nome,
             id_municipio_rf,
-            tipo_logradouro,
-            logradouro,
-            numero,
-            complemento,
             bairro,
             cep
         FROM `basedosdados.br_me_cnpj.estabelecimentos` AS dados
@@ -140,90 +135,88 @@ def extrair_empresas_bd(anos: list, cidades: list, main_dir: str = None, ufs: li
             ON dados.id_municipio = diretorio_id_municipio.id_municipio
 
         WHERE 
-            EXTRACT(YEAR FROM data) = {ano}             
+            EXTRACT(YEAR FROM data) = {ano}          
 
             """
-    query_empresas+= f"""AND (REGEXP_CONTAINS(cnae_fiscal_principal, r'^({cnae_sql})') 
-                        OR REGEXP_CONTAINS(cnae_fiscal_secundaria, r'^({cnae_sql})'))\n"""
+
+
+    processamento_estabelecimentos = extrair_dados_sql(
+    table_name= "cnpj_estabelecimentos",
+    anos=anos,
+    query_base=query_estabelecimentos,
+    main_dir=main_dir,
+    ufs=ufs,
+    limit=limit
+    )
+    process = CnpjProcess()
+    for ano in anos:
+        
+        process.estabelecimentos_treat(main_dir=main_dir, ano = ano) # não recebe o parâmetro meses, pois o parâmetro é para extração via url
+
+def extrair_estabelecimentos_url(cidades: list, processadores: str, main_dir: str = None, ufs: list = [], anos = []):
+    if processadores == 'um':
+        threads = 'one'
+    elif processadores == 'dois':
+        threads = 'dual'
+    elif processadores == 'multi':
+        threads = 'multi'
+    else:
+        raise ValueError(f"Tipo de processador '{processadores}' não é válido. Escolha entre 'um', 'dois', ou 'multi'.")
+
+    method = eval(f'{threads}_thread') # Opções: one_thread, dual_thread, multi_thread
+    table_name= "cnpj_estabelecimentos" # placeholder com nome da tabela
+    
+    processamento_estabelecimentos = baixar_e_processar_cnpjs(
+    url_template= param.url_cnpjs(),
+    main_dir=main_dir,
+    method=method,
+    anos= anos,
+    cidades= cidades,
+    ufs= ufs
+    )
+
+
+def extrair_empresas_bd(anos: list, main_dir: str = None, ufs: list = [], limit: str = ""):
+    # anos_sql = ", ".join(f"{ano}" for ano in anos)
+
+    # Query gerada pelo site da Base dos Dados: https://basedosdados.org/dataset/e43f0d5b-43cf-4bfb-8d90-c38a4e0d7c4f?table=3dbb38d1-65af-44a3-b43a-7b088891ebc0
+    query_empresas = """
+            WITH 
+            dicionario_porte AS (
+                SELECT
+                    chave AS chave_porte,
+                    valor AS descricao_porte
+                FROM `basedosdados.br_me_cnpj.dicionario`
+                WHERE
+                    TRUE
+                    AND nome_coluna = 'porte'
+                    AND id_tabela = 'empresas'
+            )
+            SELECT
+                dados.data as data,
+                dados.cnpj_basico as cnpj_basico,
+                diretorio_natureza_juridica.descricao AS natureza_juridica_descricao,
+                dados.capital_social as capital_social,
+                descricao_porte AS porte
+            FROM `basedosdados.br_me_cnpj.empresas` AS dados
+            LEFT JOIN (SELECT DISTINCT id_natureza_juridica,descricao  FROM `basedosdados.br_bd_diretorios_brasil.natureza_juridica`) AS diretorio_natureza_juridica
+                ON dados.natureza_juridica = diretorio_natureza_juridica.id_natureza_juridica
+            LEFT JOIN `dicionario_porte`
+                ON dados.porte = chave_porte
+
+            WHERE 
+                EXTRACT(YEAR FROM data) = {ano}          
+
+            """
 
     processamento_empresas = extrair_dados_sql(
     table_name= "cnpj_empresas",
     anos=anos,
-    cidades=cidades,
     query_base=query_empresas,
     main_dir=main_dir,
     ufs=ufs,
     limit=limit
     )
-
-    return processamento_empresas
-
-    
-
-def extrair_munic_dict(main_dir: str = None):
-    # Query que gera o dicionário com nome, código IBGE, código SERPRO (fiscal da RF) dos municípios do Brasil
-
-    # Query gerada pelo site da Base dos Dados: https://basedosdados.org/dataset/e43f0d5b-43cf-4bfb-8d90-c38a4e0d7c4f?table=b8432ff5-06c8-45ca-b8b6-33fceb24089d
-    query_munic = """
-            WITH 
-            dicionario_identificador_matriz_filial AS (
-                SELECT
-                    chave AS chave_identificador_matriz_filial,
-                    valor AS descricao_identificador_matriz_filial
-                FROM `basedosdados.br_me_cnpj.dicionario`
-                WHERE
-                    nome_coluna = 'identificador_matriz_filial'
-                    AND id_tabela = 'estabelecimentos'
-            ),
-            dicionario_situacao_cadastral AS (
-                SELECT
-                    chave AS chave_situacao_cadastral,
-                    valor AS descricao_situacao_cadastral
-                FROM `basedosdados.br_me_cnpj.dicionario`
-                WHERE
-                    nome_coluna = 'situacao_cadastral'
-                    AND id_tabela = 'estabelecimentos'
-            ),
-            dicionario_id_pais AS (
-                SELECT
-                    chave AS chave_id_pais,
-                    valor AS descricao_id_pais
-                FROM `basedosdados.br_me_cnpj.dicionario`
-                WHERE
-                    nome_coluna = 'id_pais'
-                    AND id_tabela = 'estabelecimentos'
-            )
-        SELECT
-            DISTINCT
-            dados.id_municipio_rf AS id_municipio_rf,
-            diretorio_id_municipio.nome AS id_municipio_nome,
-            dados.id_municipio AS id_municipio,
-            dados.sigla_uf AS sigla_uf
-        FROM `basedosdados.br_me_cnpj.estabelecimentos` AS dados
-        LEFT JOIN `dicionario_identificador_matriz_filial`
-            ON dados.identificador_matriz_filial = chave_identificador_matriz_filial
-        LEFT JOIN `dicionario_situacao_cadastral`
-            ON dados.situacao_cadastral = chave_situacao_cadastral
-        LEFT JOIN `dicionario_id_pais`
-            ON dados.id_pais = chave_id_pais
-        LEFT JOIN (
-            SELECT DISTINCT id_municipio, nome  
-            FROM `basedosdados.br_bd_diretorios_brasil.municipio`
-        ) AS diretorio_id_municipio
-            ON dados.id_municipio = diretorio_id_municipio.id_municipio;
-            """
-
-    processamento_munic = extrair_dados_sql(
-    table_name= "cods_municipios",
-    anos = [2024],
-    query_base=query_munic,
-    main_dir=main_dir
-    )
-
-    return processamento_munic
-
-
-
 
 
 def extrair_empresas_url(cidades: list, processadores: str, main_dir: str = None, ufs: list = [], anos = []):
@@ -248,6 +241,5 @@ def extrair_empresas_url(cidades: list, processadores: str, main_dir: str = None
     ufs= ufs
     )
 
-    return processamento_empresas
 
 

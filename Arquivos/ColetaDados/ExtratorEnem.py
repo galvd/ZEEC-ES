@@ -342,6 +342,5 @@ LEFT JOIN `dicionario_presenca_redacao`
     limit=limit
     )
 
-    return processamento_enem
 
 

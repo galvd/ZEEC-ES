@@ -78,7 +78,7 @@ from Arquivos.ColetaDados.ExtratorEnem import extrair_enem
 from Arquivos.ColetaDados.ExtratorEdubase import extrair_edu_base
 from Arquivos.ColetaDados.ExtratorPib import extrair_pib_cidades
 from Arquivos.ColetaDados.ExtratorIes import extrair_ies, extrair_cursos_sup
-from Arquivos.ColetaDados.ExtratorCNPJ import extrair_empresas_bd, extrair_estabelecimentos_url, extrair_estabelecimentos_bd
+from Arquivos.ColetaDados.ExtratorCNPJ import extrair_empresas_bd, extrair_cnpjs_url, extrair_estabelecimentos_bd, extrair_cnpjs_bd
 from Arquivos.ColetaDados.ExtratorConectividade import extrair_internet_acs, extrair_internet_dens
 from Arquivos.ColetaDados.ExtratorCenso import extrair_censo_agua, extrair_censo_esgoto, extrair_censo_pop, extrair_censo_alfabetizados
 from Arquivos.ColetaDados.ExtratorTransferencias import extrair_transferencias_fex, extrair_transferencias_fpm, extrair_transferencias_fundeb
@@ -235,21 +235,47 @@ limit = "" # argumento opcional para teste: LIMIT 10
 
 
 ## CNPJs
-extrair_estabelecimentos_bd( 
-    anos = anos_relatorio,
+# extrair_estabelecimentos_bd( 
+#     anos = anos_relatorio,
+#     main_dir = proj_dir,
+#     ufs = uf,
+#    fonte= 'Estabelecimentos',
+#     limit = limit
+#     )
+
+# extrair_empresas_bd( 
+#     anos = anos_relatorio,
+#     main_dir = proj_dir,
+#     ufs = uf,
+#     fonte= 'Empresas',
+#     limit = limit
+#     )
+
+extrair_cnpjs_bd( 
+    anos = [2024],
     main_dir = proj_dir,
     ufs = uf,
+    fonte = 'Joined',
     limit = limit
     )
 
 
-# habilitando o processamento paralelo para download e tratamento dos dados de CNPJ
-if __name__ == '__main__':
-    extrair_estabelecimentos_url(anos = anos_relatorio,
-        cidades = cod_rf,
-        main_dir = proj_dir,
-        processadores = 'multi', # um, dois, multi
-        ufs = uf)
+# # habilitando o processamento paralelo para download e tratamento dos dados de CNPJ
+# if __name__ == '__main__':
+#     extrair_cnpjs_url(anos = anos_relatorio,
+#         cidades = cod_rf,
+#         main_dir = proj_dir,
+#         processadores = 'multi', # um, dois, multi
+#         fonte= 'Empresas',
+#         ufs = uf)
+
+# if __name__ == '__main__':
+#     extrair_cnpjs_url(anos = anos_relatorio,
+#         cidades = cod_rf,
+#         main_dir = proj_dir,
+#         processadores = 'multi', # um, dois, multi
+#         fonte= 'Estabelecimentos',
+#         ufs = uf)
 
 
 print("Processamento dos dados completo")

@@ -74,6 +74,7 @@ Retorna o valor convertido para float ou None se não for possível a conversão
 from __future__ import annotations
 import pandas as pd
 import os, zipfile, time, requests, os, re, sys, wget, urllib, gdown
+from glob import glob
 from bs4 import BeautifulSoup
 from dataclasses import dataclass
 
@@ -184,28 +185,40 @@ class MainParameters:
 @dataclass
 class CnpjTreatment:
 
-    def etapa_atual(self, ano: int, mes: str, cnpj_dir: str, count: int):
-
-        etapa = ''
-
-        arquivo_zip = os.path.exists(os.path.join(cnpj_dir, f'Estabelecimentos{count}_{ano}_{mes}.zip'))
-        arquivo_csv = os.path.exists(os.path.join(cnpj_dir, fr'*Y{count}.*.ESTABELE'))
+    def etapa_atual(self, ano: int, mes: str, cnpj_dir: str, count: int, fonte: str):
+        print(cnpj_dir)
+        etapa = 'inicial'
+        print(os.path.join(cnpj_dir, f'{fonte}{count}_{ano}_{mes}.zip'))
+        arquivo_zip = os.path.exists(os.path.join(cnpj_dir, f'{fonte}{count}_{ano}_{mes}.zip'))
+        if fonte == 'Estabelecimentos':
+            try:
+                arquivo_csv = os.path.exists(glob(os.path.join(cnpj_dir, fr'*Y{count}.*.ESTABELE'))[0])
+            except:
+                arquivo_csv = False
+        if fonte == 'Empresas':
+            try:
+                arquivo_csv = os.path.exists(glob(os.path.join(cnpj_dir, fr'*Y{count}.*.EMPRECSV'))[0])
+            except:
+                arquivo_csv = False
+        
         pasta_parquet = os.path.exists(os.path.join(cnpj_dir, 'cnpj_url', f'cnpjs_{ano}_{mes}', f"cnpj_{ano}_{mes}_{count}"))
 
         if arquivo_zip:
             etapa = 'zip'
-            print((os.path.join(cnpj_dir, f'Estabelecimentos{count}_{ano}_{mes}.zip')))
-        if arquivo_csv:
+            print(os.path.join(cnpj_dir, f'{fonte}{count}_{ano}_{mes}.zip'))
+        if arquivo_csv and fonte == 'Estabelecimentos':
             etapa = 'csv'
-            print((os.path.join(cnpj_dir, fr'*Y{count}.*.ESTABELE')))
+            print(glob(os.path.join(cnpj_dir, fr'*Y{count}.*.ESTABELE'))[0])
+        if arquivo_csv and fonte == 'Empresas':
+            etapa = 'csv'
+            print(glob(os.path.join(cnpj_dir, fr'*Y{count}.*.EMPRECSV'))[0])
         if pasta_parquet:
             etapa = 'pasta_parquet'
             print((os.path.join(cnpj_dir, 'cnpj_url', f'cnpjs_{ano}_{mes}', f"cnpj_{ano}_{mes}_{count}")))
-
+        
         return etapa
         
-
-    def check_url(self, url: str, cnpj_dir: str, ano: int, mes: str):
+    def check_url(self, url: str, cnpj_dir: str, ano: int, mes: str, fonte: str):
         # requisição da página
         page = requests.get(url.format(ano= ano, mes= mes))   
         data = page.text
@@ -229,22 +242,21 @@ class CnpjTreatment:
         files_list = [] 
         for link in soup.find_all('a'):
             # Verifica se o link é de um arquivo estabelecimentos\d.zip
-            if re.search(fr'Estabelecimentos\d\.zip$', str(link.get('href'))) == None:
+            if re.search(fr'{fonte}\d\.zip$', str(link.get('href'))) == None:
                 pass
             else:
-                files_list.append(re.search(fr'Estabelecimentos\d\.zip$', str(link.get('href'))))
+                files_list.append(re.search(fr'{fonte}\d\.zip$', str(link.get('href'))))
     
         return soup, len(files_list)
 
     # Função que recebe lê a pasta, procura arquivos zipados e unzipa para a mesma pasta
-    def unzip_cnpj(self, cnpj_dir: str, count:int, ano: str, mes: str):
+    def unzip_cnpj(self, cnpj_dir: str, count:int, ano: str, mes: str, fonte: str):
 
         print(f'Começou a unzip de {ano}-{mes}-{count}')
-        zip_name = fr'Estabelecimentos{count}_{ano}_{mes}.zip'
-        print(cnpj_dir)
+        zip_name = fr'{fonte}{count}_{ano}_{mes}.zip'
 
         # Função para verificar se o arquivo csv já existe
-        etapa_atual = self.etapa_atual(ano, mes, cnpj_dir, count)  
+        etapa_atual = self.etapa_atual(ano, mes, cnpj_dir, count, fonte)  
         print(etapa_atual)      
         if etapa_atual in ['csv', 'pasta_parquet']:
             return print(f'Arquivo CSV já existente ou processado. \nPulando para conversão para parquet.')
@@ -264,11 +276,17 @@ class CnpjTreatment:
             print('Arquivo(s) csv encontrados no zip: ' + str(arquivos_no_zip))
             zip_ref.extractall(cnpj_dir)
 
-    def extrair_cnpj_url(self, url: str, ano: str, mes: str, count: int, cnpj_dir: str):
-        '''http://200.152.38.155/CNPJ/dados_abertos_cnpj/AAAA-mm/Estabelecimentos\d.zip'''
+    def extrair_cnpj_url(self, url: str, ano: str, mes: str, count: int, cnpj_dir: str, fonte:str):
+        '''http://200.152.38.155/CNPJ/dados_abertos_cnpj/AAAA-mm/{fonte}\d.zip'''
+
+        # Função para verificar se alguma etapa posterior já foi feita
+        etapa_atual = self.etapa_atual(ano, mes, cnpj_dir, count, fonte)  
+ 
+        if etapa_atual != 'inicial':
+            return print(f'Pulando o download de {ano}_{mes}_{count}.')
 
         treat = CnpjTreatment()
-        soup, file_count = treat.check_url(url=url, cnpj_dir=cnpj_dir, ano=ano, mes=mes)
+        soup, file_count = treat.check_url(url=url, cnpj_dir=cnpj_dir, ano=ano, mes=mes, fonte= fonte)
         max_retries = 99
         # Pasta de destino para os arquivos zip
         pasta_compactados = cnpj_dir  # Local dos arquivos zipados da Receita
@@ -308,20 +326,20 @@ class CnpjTreatment:
             return arq_original or arq_novo
         
         # Função para verificar se o arquivo zip já existe
-        etapa_atual = self.etapa_atual(ano, mes, cnpj_dir, count)  
-        print(etapa_atual)
+        etapa_atual = self.etapa_atual(ano, mes, cnpj_dir, count, fonte)  
+
         if etapa_atual in ['csv', 'pasta_parquet']:
-            return print(f'Arquivo zip já existente ou processado: {cnpj_dir}Estabelecimentos{count}_{ano}_{mes}.zip. \nPulando para extração do zip.')
+            return print(f'Arquivo zip já existente ou processado: {cnpj_dir}{fonte}{count}_{ano}_{mes}.zip. \nPulando para extração do zip.')
             
         for link in soup.find_all('a'):
             # Verifica se o link é de um arquivo estabelecimentos\d.zip
-            if re.search(fr'stabelecimentos{count}\.zip$', str(link.get('href'))):
+            if re.search(fr'{fonte}{count}\.zip$', str(link.get('href'))):
                 cam = link.get('href')
                 full_url = cam if cam.startswith('http') else url + cam
                 
                 nome_arquivo_original = os.path.basename(full_url)  # Nome original do arquivo
-                print(nome_arquivo_original)
-                nome_arquivo_novo = f'Estabelecimentos{count}_{ano}_{mes}.zip'  # Nome novo do arquivo
+
+                nome_arquivo_novo = f'{fonte}{count}_{ano}_{mes}.zip'  # Nome novo do arquivo
 
                  # Verifica se o arquivo já existe
                 if arquivo_existe(nome_arquivo_original, nome_arquivo_novo):
@@ -386,15 +404,17 @@ def save_parquet(main_dir: str, table_name: str, df: pd.DataFrame, ano: int = No
 
 
 # Função para limpar a formatação de separadores de milhar e decimais
-def clean_dots(valor):
-    if isinstance(valor, str):
-        # Remover os pontos como separadores de milhar e substituir os espaços por ponto decimal
-        valor_limpo = valor.replace('.', '').replace(',', '.').strip()
-        try:
-            return float(valor_limpo)
-        except ValueError:
-            return None
-    return valor
+def clean_dots(value):
+    print(f"Valor original: {value}")  # Imprime o valor original
+    try:
+        # Adicione a lógica aqui para remover pontos e converter para número
+        cleaned_value = value.replace('.', '').replace(',', '.')
+        cleaned_value = float(cleaned_value)
+        print(f"Valor após limpeza: {cleaned_value}")  # Imprime o valor limpo
+        return cleaned_value
+    except Exception as e:
+        print(f"Erro ao limpar o valor: {value}, Erro: {e}")
+        return None  # Retorna None se ocorrer erro na conversão
 
 def bar_progress(current, total, width=80):
     """Exibe a barra de progresso para acompanhar a leitura dos arquivos."""
@@ -423,13 +443,3 @@ def download_overwrite(dw_path: str, file_name: str, url: str):
             print(f"Erro ao baixar o arquivo: {e}")
             if os.path.exists(old_file):
                 os.rename(old_file, file_path)
-
-
-
-
-
-
-
-
-
-

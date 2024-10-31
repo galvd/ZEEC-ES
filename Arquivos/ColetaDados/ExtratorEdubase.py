@@ -44,30 +44,36 @@ def extrair_edu_base(anos: list, cidades: list, main_dir: str = None, ufs: str =
     # Query gerada pelo site da Base dos Dados: https://basedosdados.org/dataset/e083c9a2-1cee-4342-bedc-535cbad6f3cd?table=213953ad-a609-46a3-b3e0-a0a843cba843
     query_edu_base = """
             SELECT
-                ano,
-                rede,
-                localizacao,
-                sigla_uf,
-                id_municipio,
-                disciplina,
-                serie,
-                media,
-                nivel_0,
-                nivel_1,
-                nivel_2,
-                nivel_3,
-                nivel_4,
-                nivel_5,
-                nivel_6,
-                nivel_7,
-                nivel_8,
-                nivel_9,
-                nivel_10
-            FROM `basedosdados.br_inep_saeb.municipio` AS dados
+                dados.ano as ano,
+                dados.sigla_uf AS sigla_uf,
+                diretorio_sigla_uf.nome AS sigla_uf_nome,
+                dados.id_municipio AS id_municipio,
+                diretorio_id_municipio.nome AS id_municipio_nome,
+                dados.id_escola AS id_escola,
+                diretorio_id_escola.nome AS id_escola_nome,
+                diretorio_id_escola.latitude AS id_escola_latitude,
+                diretorio_id_escola.longitude AS id_escola_longitude,
+                dados.rede as rede,
+                dados.ensino as ensino,
+                dados.anos_escolares as anos_escolares,
+                dados.taxa_aprovacao as taxa_aprovacao,
+                dados.indicador_rendimento as indicador_rendimento,
+                dados.nota_saeb_matematica as nota_saeb_matematica,
+                dados.nota_saeb_lingua_portuguesa as nota_saeb_lingua_portuguesa,
+                dados.nota_saeb_media_padronizada as nota_saeb_media_padronizada,
+                dados.ideb as ideb,
+                dados.projecao as projecao
+            FROM `basedosdados.br_inep_ideb.escola` AS dados
+            LEFT JOIN (SELECT DISTINCT sigla,nome  FROM `basedosdados.br_bd_diretorios_brasil.uf`) AS diretorio_sigla_uf
+                ON dados.sigla_uf = diretorio_sigla_uf.sigla
+            LEFT JOIN (SELECT DISTINCT id_municipio,nome  FROM `basedosdados.br_bd_diretorios_brasil.municipio`) AS diretorio_id_municipio
+                ON dados.id_municipio = diretorio_id_municipio.id_municipio
+            LEFT JOIN (SELECT DISTINCT id_escola,nome,latitude,longitude  FROM `basedosdados.br_bd_diretorios_brasil.escola`) AS diretorio_id_escola
+                ON dados.id_escola = diretorio_id_escola.id_escola
     
     WHERE 
         ano = {ano}
-        AND id_municipio IN ({cidades})
+        AND dados.id_municipio IN ({cidades})
     """
 
     

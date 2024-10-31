@@ -92,29 +92,53 @@ def extrair_transf_url(url: str, table_name: str, main_dir: str = None, cidades:
 
     # Ler o arquivo CSV diretamente da URL
     print("Iniciando download do csv do ".join([word.capitalize() for word in table_name.split(sep="_")]))
+    years = {year:float for year in range(2007, datetime.today().year)}
+    dtypes = {'COD_MUN': str, 'Município': str,  'UF Município - UF': str,   'Mês': int}.update(years)
     try:
-        df_raw = pd.read_csv(url, delimiter=";")
+        df_raw = pd.read_csv(url, delimiter=";", decimal=',' ,thousands='.',  dtype=dtypes)
     except: 
         try:
             print("Erro ao ler csv como UTF-8. Iniciando tentativa com Latin1")
-            df_raw = pd.read_csv(url, delimiter=";", encoding="ISO-8859-1")
+            df_raw = pd.read_csv(url, delimiter=";", encoding="ISO-8859-1", decimal=',' ,thousands='.',  dtype=dtypes)
         except:
             return print("Não foi possível ler o arquivo csv do link fornecido.")
 
     # Filtrando os municipios de interesse
     df_raw = df_raw[df_raw['Município'].isin(cidades) & df_raw['UF'].isin(ufs)]
+    # Verificar se o DataFrame não ficou vazio
+    print(f"Número de linhas após filtro de municípios e UFs: {df_raw.shape[0]}")
+    if df_raw.empty:
+        print("DataFrame vazio após filtragem de municípios e UFs.")
+        return
+    
 
     # Usar melt para transformar as colunas de ano em uma coluna única chamada 'Ano'
-    year_columns = [str(year) for year in anos]  # Colunas de 2014 a 2024
-    for col in year_columns:
-        df_raw[col] = df_raw[col].apply(clean_dots)
+    year_columns = [str(year) for year in anos]
+    # for col in year_columns:
+    #     print(f"Coluna {col} antes de aplicar clean_dots:")
+    #     print(df_raw[col].head())  # Mostrar primeiros valores da coluna
+    #     df_raw[col] = df_raw[col].apply(clean_dots)
+    #     print(f"Coluna {col} após aplicar clean_dots:")
+    #     print(df_raw[col].head())
+    
+    # # Verificar se todas as colunas de ano estão vazias após clean_dots
+    # print("Verificando valores nulos nas colunas de ano após clean_dots:")
+    # print(df_raw[year_columns].isnull().sum())
+    
+    # # Se todas as colunas tiverem valores nulos, print uma mensagem de erro
+    # if df_raw[year_columns].isnull().all().all():
+    #     print("Todas as colunas de ano estão nulas após aplicar clean_dots.")
+    #     return
+    
+    print('DataFrame após aplicação de clean_dots:', df_raw.head())
+
 
     fixed_columns = ['COD_MUN', 'Município', 'UF', 'Município - UF', 'Mês']
     
-    
+    print(df_raw.dtypes)
     df = pd.melt(df_raw, id_vars=fixed_columns, value_vars=year_columns, 
                         var_name='ano', value_name='transferencias')
-        
+    print('df_clean', df)
     if len(df) == 0:
         print(f"Tabela vazia do " + " ".join([word.capitalize() for word in table_name.split(sep="_")]))
     
@@ -143,13 +167,15 @@ def extrair_transf_url(url: str, table_name: str, main_dir: str = None, cidades:
     print("Processamento dos dados do " + " ".join([word.capitalize() for word in table_name.split(sep="_")]) + " completo!")
 
 
-def extrair_dados_sql(table_name: str,  query_base: str, main_dir: str = None, cidades: list = [], ufs: list = [], anos: list = [], mes: int = None, limit: str = ""):
+def extrair_dados_sql(table_name: str,  query_base: str, main_dir: str = None, 
+                      cidades: list = [], ufs: list = [], anos: list = [''], 
+                      mes: int = None, limit: str = ""):
     
-    print(f"Iniciando download dos dados do " + " "" ".join([word.capitalize() for word in table_name.split(sep="_")]))
+    print(f"Iniciando download dos dados do " + " """.join([word.capitalize() for word in table_name.split(sep="_")]))
 
     # Converte as listas em strings apropriadas para uso na query SQL
     cidades_sql = ", ".join(f"'{cidade}'" for cidade in cidades)
-    uf_sql = ", ".join(f"'{uf}'" for uf in ufs)
+    ufs_sql = ", ".join(f"'{uf}'" for uf in ufs)
 
     for ano in anos:
         # Caminho para verificar se o arquivo Parquet já existe
@@ -163,7 +189,7 @@ def extrair_dados_sql(table_name: str,  query_base: str, main_dir: str = None, c
             continue
 
         # Substitui placeholders no query_base
-        query = query_base.format(ano=ano, cidades=cidades_sql, ufs=uf_sql)
+        query = query_base.format(ano=ano, cidades=cidades_sql, ufs=ufs_sql)
         
         if cidades != [] and query_base.find("ano = {ano}") != -1 and table_name not in ["enem", "educ_base"]:
             query+= f'AND diretorio_id_municipio.nome IN ({cidades_sql}) \n'
@@ -175,8 +201,8 @@ def extrair_dados_sql(table_name: str,  query_base: str, main_dir: str = None, c
             query+= f'AND dados.id_municipio IN ({cidades_sql})\n'
             
         
-        if ufs != [] and table_name not in ["enem", "cnpj_empresas"]:
-            query += f' AND sigla_uf in ({uf_sql}) \n'
+        if ufs != [] and table_name not in ["enem", "cnpj_empresas",  "cnpj_joined"]:
+            query += f' AND sigla_uf in ({ufs_sql}) \n'
 
         if mes != None:
             query += f' AND mes = {mes} \n'
@@ -205,10 +231,10 @@ def extrair_dados_sql(table_name: str,  query_base: str, main_dir: str = None, c
     print("Processamento dos dados do " + " ".join([word.capitalize() for word in table_name.split(sep="_")]) + " completo!")
     
 
-def baixar_e_processar_cnpjs(url_template: str, main_dir: str, cidades: list, ufs:list, method: function, anos: list = []):
+def baixar_e_processar_cnpjs(url_template: str, main_dir: str, cidades: list, ufs:list, method: function, fonte: str, anos: list = []):
         treat = CnpjTreatment()
         process = CnpjProcess()
-        cnpj_dir = os.path.join(main_dir, "Dados", "Cnpj Estabelecimentos")
+        cnpj_dir = os.path.join(main_dir, "Dados", f"Cnpj {fonte.title()}")
 
         print('Iniciando download dos arquivos de CNPJs da Receita Federal')
 
@@ -230,11 +256,11 @@ def baixar_e_processar_cnpjs(url_template: str, main_dir: str, cidades: list, uf
                     print(f'O arquivo objetivo cnpjs_{ano}_{mes}.parquet já foi gerado, removendo arquivos e indo para o próximo mês')
 
                     # deleta zips e csv
-                    process.limpar_residuo(ano, mes, cnpj_dir)
+                    process.limpar_residuo(ano= ano, mes= mes, cnpj_dir= cnpj_dir, fonte= fonte)
                     continue
                 
                 url_formatada = url_template.format(ano=ano, mes=mes)
-                soup, file_count = treat.check_url(url= url_formatada, cnpj_dir= cnpj_dir, ano= ano, mes= mes)
+                soup, file_count = treat.check_url(url= url_formatada, cnpj_dir= cnpj_dir, ano= ano, mes= mes, fonte= fonte)
 
                 # print(f'Iniciando processamento com número de threads alocadas: {thread_num}')
 
@@ -242,11 +268,13 @@ def baixar_e_processar_cnpjs(url_template: str, main_dir: str, cidades: list, uf
 
                 # funções de method em Arquivos.TratamentoDados.ToolsTratamento
                 # Função que realiza o loot para o número de arquivos na url
-                method(cnpj_dir, ano, mes, url_formatada, file_count, cidades, ufs) # Exemplo de method: CnpjProcess.MultiThread.routine
-
-                # Limpar resíduos após o processamento
-                process.limpar_residuo(ano, mes, cnpj_dir)
+                method(cnpj_dir, ano, mes, url_formatada, file_count, cidades, ufs, fonte) # Exemplo de method: ToolsTratamento.one_thread
+                print('saiu de method')
+                
+                
                 print('Unificando parquets')
-                process.unify_parquet(ano= ano, mes= mes, cnpj_dir= cnpj_dir)
-                process.estabelecimentos_treat(ano = ano, main_dir=main_dir, mes=mes)
+                process.unify_parquet(ano= ano, mes= mes, cnpj_dir= cnpj_dir, fonte= fonte)
+                process.cnpj_treat(ano= ano, main_dir= main_dir, mes= mes, fonte= fonte)
+                # Limpar resíduos após o processamento
+                process.limpar_residuo(ano= ano, mes= mes, cnpj_dir= cnpj_dir, fonte= fonte)
 

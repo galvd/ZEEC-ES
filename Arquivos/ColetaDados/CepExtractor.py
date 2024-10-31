@@ -1,6 +1,8 @@
 from __future__ import annotations
-import sys, json, os, zipfile, shutil, requests
+import sys, json, os, zipfile, shutil, requests, re
 import polars as pl
+import pandas as pd
+from time import sleep
 
 with open('.\\Arquivos\\config.json') as config_file:
     config = json.load(config_file)
@@ -149,7 +151,77 @@ def extrair_ceps_v1_es(main_dir:str):
         ]).drop('localidade')
                
         # Salvar em um arquivo Parquet
-        df.write_parquet(os.path.join(input_folder, 'ceps_esss.parquet'))
+        df.write_parquet(os.path.join(input_folder, 'ceps_es.parquet'))
         print(f"\nArquivo salvo com {len(df)} CEPs do ES.")
     else:
         print("\nNenhum CEP válido do ES foi encontrado.")
+
+
+# Função para extrair os CEPs restantes de acordo com a base v2. Coleta os CEPs linha a linha
+def extrair_ceps_v2_es():
+
+    # Carregar o arquivo Excel que contém os CEPs faltantes
+    missing_ceps = pd.read_excel(r'C:\Users\galve\MyDrive\Carreira\ObservatorioES\Dados\cep_merge.xlsx')
+
+    # Função para remover caracteres não numéricos do CEP
+    def limpar_cep(cep):
+        return re.sub(r'\D', '', cep)
+
+    # Lista para armazenar os dados extraídos
+    dados_cep = []
+
+    # Contadores para visualização do progresso
+    total_ceps = len(missing_ceps)
+    sucessos = 0
+    falhas = 0
+
+    # Iterar sobre cada CEP no dataframe
+    for index, cep in enumerate(missing_ceps['cep']):
+        try:
+            if str(cep).startswith("29"):
+                pass
+            else:
+                continue
+            # Limpar o CEP para garantir que seja numérico
+            cep_limpo = limpar_cep(str(cep))
+            
+            # Montar a URL da API
+            url = f"https://brasilapi.com.br/api/cep/v2/{cep_limpo}"
+            
+            # Fazer a requisição à API
+            response = requests.get(url)
+            
+            if response.status_code == 200:
+                data = response.json()
+                # Verificar se o campo 'bairro' e 'localidade' existem no JSON
+                bairro = data.get('bairro', 'Não encontrado')
+                localidade = data.get('localidade', 'Não encontrada')
+                dados_cep.append({'cep': cep_limpo, 'bairro': bairro, 'localidade': localidade})
+                
+                sucessos += 1
+                print(f"[{index+1}/{total_ceps}] Sucesso - CEP: {cep_limpo}, Bairro: {bairro}, Cidade: {localidade}")
+            else:
+                # Adicionar erro na lista
+                dados_cep.append({'cep': cep_limpo, 'bairro': 'Erro', 'localidade': 'Erro'})
+                falhas += 1
+                print(f"[{index+1}/{total_ceps}] Falha - CEP: {cep_limpo}, Status: {response.status_code}")
+
+            sleep(2)
+
+        except:
+            print('Requisições com erro. Salvando o progresso.')
+            df_ceps_bairros = pd.DataFrame(dados_cep)
+
+
+    # Exibir o total de sucessos e falhas
+    print(f"Total de requisições bem-sucedidas: {sucessos}")
+    print(f"Total de requisições com falha: {falhas}")
+        
+
+    # Criar o DataFrame final com as informações de CEP e Bairro
+    df_ceps_bairros = pd.DataFrame(dados_cep)
+
+    # Exibir o DataFrame resultante
+    print(df_ceps_bairros)
+
+    df_ceps_bairros.to_excel(r'C:\Users\galve\MyDrive\Carreira\ObservatorioES\Dados\cep_api.xlsx', index=False)

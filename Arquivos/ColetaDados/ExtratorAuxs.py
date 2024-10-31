@@ -113,6 +113,22 @@ def extrair_munic_dict(main_dir: str = None):
     
     df.to_parquet(os.path.join(dict_path, 'cidadeES.parquet'), index= False)
 
+def extrair_cnpj_dict(main_dir: str = None):
+    # Query que gera o dicionário dos códigos de caracterização dos dados de CNPJ da Receita Federal
+    # Query gerada pelo site da Base dos Dados: https://basedosdados.org/dataset/e43f0d5b-43cf-4bfb-8d90-c38a4e0d7c4f?table=3dbb38d1-65af-44a3-b43a-7b088891ebc0
+    query_cnpj_dict = """
+            SELECT
+            *
+            FROM `basedosdados.br_me_cnpj.dicionario`
+            """
+
+    processamento_munic = extrair_dados_sql(
+    table_name= "dict_cnpjs",
+    query_base=query_cnpj_dict,
+    main_dir=main_dir
+    )
+
+extrair_cnpj_dict(os.getcwd())
 
 def get_poligono_bairros_es(main_dir: str):
     url = r'https://ide.geobases.es.gov.br/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typename=geonode%3Aijsn_limite_bairro_2020_UTF8&outputFormat=csv&srs=EPSG%3A31984'

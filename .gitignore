@@ -8,3 +8,6 @@ Arquivos/ColetaDados/CNPJ/LICENSE
 Arquivos/ColetaDados/CNPJ/requirements.txt
 *.tmp
 /Dados
+*.docx
+Arquivos/doc_pades.md
+*.pdf

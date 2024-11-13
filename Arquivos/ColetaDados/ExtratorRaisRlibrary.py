@@ -11,7 +11,7 @@ library(readr)
 
 # Baixar o arquivo .7z
 download.file("ftp://ftp.mtps.gov.br/pdet/microdados/NOVO%20CAGED/2024/202401/CAGEDMOV202401.7z",
-              destfile = "C:/Users/ferna/Downloads/CAGEDMOV202401.7z",
+              destfile = "diretório/CAGEDMOV202401.7z",
               mode = "wb")
 
 # Para descompactar o arquivo .7z, você precisará do pacote 'archive' ou de uma ferramenta externa como o 7-Zip.
@@ -25,5 +25,5 @@ install.packages("R.utils")
 library(R.utils)
 
 # Extraia o arquivo .7z na mesma pasta
-archive_extract("C:/Users/ferna/Downloads/CAGEDMOV202401.7z", dir = "C:/Users/ferna/Downloads")
+archive_extract("diretório/CAGEDMOV202401.7z", dir = "diretório")
 

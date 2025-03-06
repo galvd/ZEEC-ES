@@ -1,3 +1,8 @@
+-Este script baixa os dados diretamente do site da Transcol (ano de 2023 e 2024).
+-Os dados da TRANSCOL é separado por coluna (mês a mês) + a coluna total e por região (Consórcio Atlântico Sul, Sudoeste e Sistema Transcol).
+-Os seguintes componentes estão disponíveis: Custo por Km, Custo Total, Custo por Passageiro, Receita Arrecadada, Subsídio líquido, dentre outras informações.
+-Código:
+
 import requests
 
 def download_file(url, filename):

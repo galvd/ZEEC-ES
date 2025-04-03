@@ -251,3 +251,128 @@ def extrair_caged(anos: list, cidades: list, main_dir: str = None, ufs: str = ""
     limit=limit
     )
 
+
+
+
+def extrair_caged_es(anos: list, main_dir: str = None, ufs: str = "", mes: int = None, limit: str = ""):
+
+    # Query gerada pelo site da Base dos Dados: https://basedosdados.org/dataset/562b56a3-0b01-4735-a049-eeac5681f056?table=95106d6f-e36e-4fed-b8e9-99c41cd99ecf
+    query_caged = """
+                WITH
+    dicionario_tipo_movimentacao AS (
+        SELECT
+            chave AS chave_tipo_movimentacao,
+            valor AS descricao_tipo_movimentacao
+        FROM `basedosdados.br_me_caged.dicionario`
+        WHERE
+            nome_coluna = 'tipo_movimentacao'
+            AND id_tabela = 'microdados_movimentacao'
+    ),
+    salario_stats AS (
+        SELECT
+            APPROX_QUANTILES(dados.salario_mensal, 100) AS quantis
+        FROM `basedosdados.br_me_caged.microdados_movimentacao` AS dados
+    )
+SELECT
+    dados.ano AS ano,
+    dados.mes AS mes,
+    
+    -- Categoriza os tipos de movimentação
+    CASE
+        WHEN descricao_tipo_movimentacao IN (
+            'Culpa Recíproca',
+            'Desligamento Por Término De Contrato',
+            'Desligamento Por Demissão Com Justa Causa',
+            'Desligamento A Pedido',
+            'Desligamento De Tipo Ignorado',
+            'Desligamento Por Demissão Sem Justa Causa',
+            'Término Contrato Trabalho Prazo Determinado',
+            'Desligamento Por Acordo Entre Empregado E Empregador',
+            'Desligamento Por Morte',
+            'Desligamento Por Aposentadoria'
+        ) THEN 'Desligamento'
+        
+        WHEN descricao_tipo_movimentacao IN (
+            'Admissão Por Reemprego',
+            'Admissão Por Contrato Trabalho Prazo Determinado',
+            'Admissão Por Primeiro Emprego',
+            'Admissão Por Reintegração'
+        ) THEN 'Admissão'
+        
+        ELSE 'Outros'
+    END AS tipo_movimentacao,
+
+    -- Cálculo dos percentis
+    APPROX_QUANTILES(dados.salario_mensal, 100)[OFFSET(10)] AS p10,
+    APPROX_QUANTILES(dados.salario_mensal, 100)[OFFSET(20)] AS p20,
+    APPROX_QUANTILES(dados.salario_mensal, 100)[OFFSET(50)] AS p50,
+    APPROX_QUANTILES(dados.salario_mensal, 100)[OFFSET(80)] AS p80,
+    APPROX_QUANTILES(dados.salario_mensal, 100)[OFFSET(90)] AS p90,
+    APPROX_QUANTILES(dados.salario_mensal, 100)[OFFSET(99)] AS p99,
+
+    -- Média das rendas para admissões e desligamentos
+    AVG(CASE WHEN descricao_tipo_movimentacao IN (
+        'Admissão Por Reemprego',
+        'Admissão Por Contrato Trabalho Prazo Determinado',
+        'Admissão Por Primeiro Emprego',
+        'Admissão Por Reintegração'
+    ) THEN dados.salario_mensal END) AS media_admissao,
+
+    AVG(CASE WHEN descricao_tipo_movimentacao IN (
+        'Culpa Recíproca',
+        'Desligamento Por Término De Contrato',
+        'Desligamento Por Demissão Com Justa Causa',
+        'Desligamento A Pedido',
+        'Desligamento De Tipo Ignorado',
+        'Desligamento Por Demissão Sem Justa Causa',
+        'Término Contrato Trabalho Prazo Determinado',
+        'Desligamento Por Acordo Entre Empregado E Empregador',
+        'Desligamento Por Morte',
+        'Desligamento Por Aposentadoria'
+    ) THEN dados.salario_mensal END) AS media_desligamento,
+
+    -- Nova coluna que agrega as duas médias
+    COALESCE(
+        AVG(CASE WHEN descricao_tipo_movimentacao IN (
+            'Admissão Por Reemprego',
+            'Admissão Por Contrato Trabalho Prazo Determinado',
+            'Admissão Por Primeiro Emprego',
+            'Admissão Por Reintegração'
+        ) THEN dados.salario_mensal END),
+        AVG(CASE WHEN descricao_tipo_movimentacao IN (
+            'Culpa Recíproca',
+            'Desligamento Por Término De Contrato',
+            'Desligamento Por Demissão Com Justa Causa',
+            'Desligamento A Pedido',
+            'Desligamento De Tipo Ignorado',
+            'Desligamento Por Demissão Sem Justa Causa',
+            'Término Contrato Trabalho Prazo Determinado',
+            'Desligamento Por Acordo Entre Empregado E Empregador',
+            'Desligamento Por Morte',
+            'Desligamento Por Aposentadoria'
+        ) THEN dados.salario_mensal END)
+    ) AS media_agregada
+
+FROM `basedosdados.br_me_caged.microdados_movimentacao` AS dados
+LEFT JOIN dicionario_tipo_movimentacao
+    ON dados.tipo_movimentacao = chave_tipo_movimentacao
+
+-- Filtra os dados para remover outliers
+WHERE dados.salario_mensal >= (SELECT quantis[OFFSET(1)] FROM salario_stats) -- 0.5%
+  AND dados.salario_mensal <= (SELECT quantis[OFFSET(98)] FROM salario_stats) -- 99.5%
+
+GROUP BY
+    dados.ano, dados.mes, tipo_movimentacao
+ORDER BY
+    dados.ano, dados.mes, tipo_movimentacao;
+
+    
+            """
+
+    processamento_caged_es = extrair_dados_sql(
+    table_name= "caged_ES",
+    query_base=query_caged,
+    main_dir=main_dir,
+    ufs= ufs,
+    limit=limit
+    )

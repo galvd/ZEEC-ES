@@ -246,10 +246,6 @@ def extrair_empresas_url(cidades: list, processadores: str, main_dir: str = None
     )
 
 
-
-
-
-
 def extrair_cnpjs_bd(anos: list, fonte = 'Joined', main_dir: str = None, ufs: list = [], limit: str = ""):
     uf_sql = ", ".join(f"'{uf}'" for uf in ufs)
 

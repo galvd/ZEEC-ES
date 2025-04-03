@@ -11,3 +11,7 @@ Arquivos/ColetaDados/CNPJ/requirements.txt
 *.docx
 Arquivos/doc_pades.md
 *.pdf
+*.xlsx
+Arquivos/Analise/EDA.ipynb
+/Arquivos/Analise
+/Arquivos/Analise

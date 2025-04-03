@@ -201,7 +201,7 @@ def extrair_dados_sql(table_name: str,  query_base: str, main_dir: str = None,
             query+= f'AND dados.id_municipio IN ({cidades_sql})\n'
             
         
-        if ufs != [] and table_name not in ["enem", "cnpj_empresas",  "cnpj_joined"]:
+        if ufs != [] and table_name not in ["enem", "cnpj_empresas",  "cnpj_joined", 'caged_ES']:
             query += f' AND sigla_uf in ({ufs_sql}) \n'
 
         if mes != None:

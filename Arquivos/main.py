@@ -73,7 +73,7 @@ from datetime import datetime
 
 from Arquivos.ColetaDados.ToolsColeta import MainParameters
 from Arquivos.ColetaDados.ExtratorRais import extrair_rais
-from Arquivos.ColetaDados.ExtratorCaged import extrair_caged
+from Arquivos.ColetaDados.ExtratorCaged import extrair_caged, extrair_caged_es
 from Arquivos.ColetaDados.ExtratorEnem import extrair_enem
 from Arquivos.ColetaDados.ExtratorEdubase import extrair_edu_base
 from Arquivos.ColetaDados.ExtratorPib import extrair_pib_cidades
@@ -104,25 +104,31 @@ limit = "" # argumento opcional para teste: LIMIT 10
 
 ## RAIS ######################  JÁ COLETADO PARA < 2024
 
-# extrair_rais(
-#     anos = anos_relatorio,
-#     cidades = nome_mun,
-#     main_dir = proj_dir,
-#     ufs = uf,
-#     limit = limit
-#     )
+extrair_rais(
+    anos = anos_relatorio,
+    cidades = nome_mun,
+    main_dir = proj_dir,
+    ufs = uf,
+    limit = limit
+    )
 
 
 ## CAGED
 
-# extrair_caged(
-#     anos = anos_relatorio,
-#     cidades = nome_mun,
-#     main_dir = proj_dir,
-#     ufs = uf,
-#     limit = limit
-#     )
+extrair_caged(
+    anos = anos_relatorio,
+    cidades = nome_mun,
+    main_dir = proj_dir,
+    ufs = uf,
+    limit = limit
+    )
 
+extrair_caged_es(
+    anos = anos_relatorio,
+    main_dir = proj_dir,
+    ufs= uf,
+    limit = limit
+    )
 
 # ## Censo ######################  JÁ COLETADO PARA < 2024
 
@@ -163,21 +169,21 @@ limit = "" # argumento opcional para teste: LIMIT 10
 
 # ## Acesso à Internet Banda Larga ######################  JÁ COLETADO PARA < 2024
 
-# extrair_internet_acs(
-#     anos = anos_relatorio,
-#     cidades = nome_mun,
-#     main_dir = proj_dir,
-#     ufs = uf,
-#     limit = limit
-#     )
+extrair_internet_acs(
+    anos = anos_relatorio,
+    cidades = nome_mun,
+    main_dir = proj_dir,
+    ufs = uf,
+    limit = limit
+    )
 
-# extrair_internet_dens(
-#     anos = anos_relatorio,
-#     cidades = nome_mun,
-#     main_dir = proj_dir,
-#     ufs = uf,
-#     limit = limit
-#     )
+extrair_internet_dens(
+    anos = anos_relatorio,
+    cidades = nome_mun,
+    main_dir = proj_dir,
+    ufs = uf,
+    limit = limit
+    )
 
 
 # ## Ensino Superior ######################  JÁ COLETADO PARA < 2024

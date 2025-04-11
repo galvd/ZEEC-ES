@@ -82,6 +82,7 @@ from Arquivos.ColetaDados.ExtratorCNPJ import extrair_empresas_bd, extrair_cnpjs
 from Arquivos.ColetaDados.ExtratorConectividade import extrair_internet_acs, extrair_internet_dens
 from Arquivos.ColetaDados.ExtratorCenso import extrair_censo_agua, extrair_censo_esgoto, extrair_censo_pop, extrair_censo_alfabetizados
 from Arquivos.ColetaDados.ExtratorTransferencias import extrair_transferencias_fex, extrair_transferencias_fpm, extrair_transferencias_fundeb
+from Arquivos.ColetaDados.ExtratorAntenas import extrair_antenas_es
 
 
 beg = datetime.now()
@@ -102,33 +103,34 @@ limit = "" # argumento opcional para teste: LIMIT 10
 
 ### Extração dos dados
 
+
 ## RAIS ######################  JÁ COLETADO PARA < 2024
 
-extrair_rais(
-    anos = anos_relatorio,
-    cidades = nome_mun,
-    main_dir = proj_dir,
-    ufs = uf,
-    limit = limit
-    )
+# extrair_rais(
+#     anos = anos_relatorio,
+#     cidades = nome_mun,
+#     main_dir = proj_dir,
+#     ufs = uf,
+#     limit = limit
+#     )
 
 
-## CAGED
+# ## CAGED
 
-extrair_caged(
-    anos = anos_relatorio,
-    cidades = nome_mun,
-    main_dir = proj_dir,
-    ufs = uf,
-    limit = limit
-    )
+# extrair_caged(
+#     anos = anos_relatorio,
+#     cidades = nome_mun,
+#     main_dir = proj_dir,
+#     ufs = uf,
+#     limit = limit
+#     )
 
-extrair_caged_es(
-    anos = anos_relatorio,
-    main_dir = proj_dir,
-    ufs= uf,
-    limit = limit
-    )
+# extrair_caged_es(
+#     anos = anos_relatorio,
+#     main_dir = proj_dir,
+#     ufs= uf,
+#     limit = limit
+#     )
 
 # ## Censo ######################  JÁ COLETADO PARA < 2024
 
@@ -167,23 +169,31 @@ extrair_caged_es(
 #     )
 
 
+# ## Antenas 
+
+# extrair_antenas_es(
+#     cidades = cod_ibge,
+#     main_dir = proj_dir,
+#     ufs = uf
+#     )
+
 # ## Acesso à Internet Banda Larga ######################  JÁ COLETADO PARA < 2024
 
-extrair_internet_acs(
-    anos = anos_relatorio,
-    cidades = nome_mun,
-    main_dir = proj_dir,
-    ufs = uf,
-    limit = limit
-    )
+# extrair_internet_acs(
+#     anos = anos_relatorio,
+#     cidades = nome_mun,
+#     main_dir = proj_dir,
+#     ufs = uf,
+#     limit = limit
+#     )
 
-extrair_internet_dens(
-    anos = anos_relatorio,
-    cidades = nome_mun,
-    main_dir = proj_dir,
-    ufs = uf,
-    limit = limit
-    )
+# extrair_internet_dens(
+#     anos = anos_relatorio,
+#     cidades = nome_mun,
+#     main_dir = proj_dir,
+#     ufs = uf,
+#     limit = limit
+#     )
 
 
 # ## Ensino Superior ######################  JÁ COLETADO PARA < 2024
@@ -257,13 +267,13 @@ extrair_internet_dens(
 #     limit = limit
 #     )
 
-extrair_cnpjs_bd( 
-    anos = [2024],
-    main_dir = proj_dir,
-    ufs = uf,
-    fonte = 'Joined',
-    limit = limit
-    )
+# extrair_cnpjs_bd( 
+#     anos = anos_relatorio,
+#     main_dir = proj_dir,
+#     ufs = uf,
+#     fonte = 'Joined',
+#     limit = limit
+#     )
 
 
 # # habilitando o processamento paralelo para download e tratamento dos dados de CNPJ

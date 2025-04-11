@@ -88,7 +88,7 @@ class MainParameters:
     url_fpm = r"https://www.tesourotransparente.gov.br/ckan/dataset/3b5a779d-78f5-4602-a6b7-23ece6d60f27/resource/d69ff32a-6681-4114-81f0-233bb6b17f58/download/FPM-por-Municipio.csv"
     url_fundeb = r"https://www.tesourotransparente.gov.br/ckan/dataset/3b5a779d-78f5-4602-a6b7-23ece6d60f27/resource/18d5b0ae-8037-461e-8685-3f0d7752a287/download/FUNDEB-por-Municipio.csv"
 
-    anos_relatorio = [2021, 2022, 2023, 2024, 2025]
+    anos_relatorio = [2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025]
     uf = ["ES"]
     cnae_lista =   ['311601','311602','311603','311604','312401','312403','312404','321301','321302','321303','321304','321305','321399',
                     '322101','322102','322103','322104','322105','322106','322107','322199','600001','600002','600003','810001','810002',

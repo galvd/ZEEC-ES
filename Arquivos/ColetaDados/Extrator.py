@@ -73,9 +73,14 @@ O script utiliza o módulo gc para a coleta de lixo, liberando memória após op
 
 from __future__ import annotations
 import basedosdados as bd
-import pandas as pd 
+import polars as pl 
+import pandas as pd
 import os, sys, json, gc
-from datetime import datetime
+from datetime import datetime, date
+import requests
+import zipfile
+import io
+import gc
 
 with open('.\\Arquivos\\config.json') as config_file:
     config = json.load(config_file)
@@ -86,6 +91,132 @@ from Arquivos.TratamentoDados.ToolsTratamento import CnpjProcess
 
 cloud_id = config['cloud_id']
 
+
+def extrair_antenas_url(url: str, table_name: str, main_dir: str = None, cidades_ibge: list = [], ufs: list = []):
+    """
+    Faz o download do arquivo zip a partir da URL ou utiliza o arquivo existente no diretório informado,
+    extrai o CSV "Estacoes_Mosaico_STEL.csv", filtra os registros de antenas com base nas UFs e,
+    opcionalmente, nos códigos IBGE dos municípios de interesse, e salva os dados filtrados em um arquivo Parquet.
+
+    :param url: URL do arquivo zip a ser baixado.
+    :param table_name: Nome da tabela/arquivo que será usado para salvar os dados processados.
+    :param main_dir: Diretório de destino para salvar o arquivo.
+    :param cidades_ibge: Lista de códigos IBGE dos municípios de interesse.
+    :param ufs: Lista de UFs de interesse.
+    """
+    header_msg = " ".join([word.capitalize() for word in table_name.split("_")])
+    print("Iniciando processamento do zip para " + header_msg)
+    
+    # Define o caminho para salvar o zip (dinamizado)
+    # Se main_dir for informado, constrói um caminho mais elaborado; caso contrário, usa o diretório corrente.
+    if main_dir:
+        zip_filename = os.path.join(main_dir, "Dados", table_name.title().replace("_", " "), os.path.basename(url))
+        os.makedirs(os.path.dirname(zip_filename), exist_ok=True)
+    else:
+        zip_filename = os.path.basename(url)
+    
+    # Verifica se o arquivo já existe localmente; se sim, lê o conteúdo, caso contrário faz o download.
+    if os.path.exists(zip_filename):
+        print(f"O arquivo '{zip_filename}' já existe. Pulando o download.")
+        with open(zip_filename, "rb") as f:
+            zip_content = f.read()
+    else:
+        response = requests.get(url)
+        if response.status_code != 200:
+            print("Falha no download. Código de status:", response.status_code)
+            return None
+        print("Download concluído com sucesso.")
+        zip_content = response.content
+        
+        # Salva o zip localmente para uso futuro
+        with open(zip_filename, "wb") as f:
+            f.write(zip_content)
+            print(f"Arquivo '{zip_filename}' salvo.")
+    
+    # Abre o arquivo zip em memória
+    with zipfile.ZipFile(io.BytesIO(zip_content)) as z:
+        arquivos = z.namelist()
+        print("Arquivos encontrados no zip:", arquivos)
+
+        # Processa apenas o CSV desejado: "Estacoes_Mosaico_STEL.csv"
+        for nome_arquivo in arquivos:
+            if os.path.basename(nome_arquivo).lower() != "Estacoes_SMP.csv".lower():
+                continue
+            
+            print("Processando o arquivo:", nome_arquivo)
+            # Tenta ler o CSV com encoding 'utf8'; se falhar, tenta 'latin1'
+            try:
+                with z.open(nome_arquivo) as arquivo:
+                    df = pl.read_csv(arquivo, separator=';', encoding='utf8', ignore_errors=True)
+            except Exception as e:
+                print("Erro ao ler o CSV com utf8. Tentando encoding latin1...", e)
+                with z.open(nome_arquivo) as arquivo:
+                    df = pl.read_csv(arquivo, separator=';', encoding='latin1', ignore_errors=True)
+            
+            print("Visualizando os primeiros registros:")
+            print(df.head())
+            
+            # Filtra os registros conforme UF e Código IBGE (das cidades), se aplicável
+            if "UF" in df.columns and ufs:
+                df = df.filter(pl.col("UF").is_in(ufs))
+            if "Código IBGE" in df.columns and cidades_ibge:
+                # Converte os valores para string para garantir a compatibilidade na comparação
+                df = df.filter(pl.col("Código IBGE").cast(pl.Utf8).is_in(cidades_ibge))
+            
+            # Lista das colunas que precisam ser convertidas para string
+            columns_to_str = [
+                "Cep",
+                "CNPJ ou CPF",
+                "Número da Estação",
+                "Número do Ato de RF",
+                "Código do Tipo Antena",
+                "Ganho da Antena",
+                "Frente Costa da Antena"
+                "Código de Homologação da Antena"
+            ]
+            # Converte dinamicamente as colunas existentes para string (Utf8)
+            colunas_existentes = [col for col in columns_to_str if col in df.columns]
+            if colunas_existentes:
+                df = df.with_columns([pl.col(col).cast(pl.Utf8) for col in colunas_existentes])
+            
+            print("Dados após conversões:")
+            print(df.head())
+
+            # Remove as colunas indesejadas, se existirem
+            cols_remover = ['Número Fistel', 'NumCnpjCpf', 'NumServico', 'Frequência (MHz)',
+                'Banda_MHZ', 'Frequência Inicial', 'Frequência Final', 'FreqTxMHz', 'FreqRxMHz',
+                'Designação Emissão', 'Entidade', 'NumSetor', 'EnderecoEstacao',
+                'EndBairro', 'EndNumero', 'EndComplemento', 'ClassInfraFisica', 'AnoMesLic',
+                'Situacao', 'Caráter', 'Número Ato', "Data Validade", "Data Licenciamento",
+                'Código Nacional', 'Nome da UF', 'Latitude decimal', 'Longitude decimal',
+            ]
+            cols_existentes_remover = [col for col in cols_remover if col in df.columns]
+            if cols_existentes_remover:
+                df = df.drop(cols_existentes_remover)
+            
+            df = df.sort(by=["UF", "Código IBGE", 'Latitude', 'Longitude'])
+            
+
+            # Dropando linhas duplicadas
+            df = df.unique(subset=["UF", "Código IBGE", 
+                                   'Número Estação', 'Subfaixa Estação'], keep="first")
+            
+            print("Dados após remoção das colunas indesejadas:")
+            print(df.head())
+            print("Número de linhas final:", df.height)
+            # Converte o DataFrame de Polars para pandas antes de salvar
+            df = df.to_pandas()
+
+            
+            
+            # Salva o DataFrame filtrado em um arquivo Parquet
+            save_parquet(main_dir=main_dir, table_name=table_name, df=df)
+                
+            # Libera a memória utilizada pelo DataFrame
+            del df
+            gc.collect()
+                
+    print("Processamento dos dados de " + header_msg + " completo!")
 
 
 def extrair_transf_url(url: str, table_name: str, main_dir: str = None, cidades: list = [], ufs: list = [], anos = []):
